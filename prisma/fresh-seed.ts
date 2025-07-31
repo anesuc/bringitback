@@ -21,7 +21,7 @@ async function main() {
     data: {
       title: "Zune HD",
       company: "Microsoft",
-      category: "ENTERTAINMENT" as Category,
+      category: "MEDIA_PLAYERS" as Category,
       description: "Restore functionality to the innovative Zune HD media player that people purchased but can no longer fully use",
       longDescription: "The Zune HD was Microsoft's premium portable media player with an OLED touchscreen, released in 2009. After Microsoft discontinued the Zune service in 2015, many features including the marketplace, social features, and streaming capabilities became inaccessible. This bounty aims to restore these core functionalities by creating alternative servers and services, allowing existing Zune HD owners to fully utilize their devices again. The project will focus on music streaming, podcast support, marketplace access, and social features that made the Zune ecosystem unique.",
       imageUrl: "https://images.unsplash.com/photo-1493020258366-be3ead1b3027?w=400&h=300&fit=crop",

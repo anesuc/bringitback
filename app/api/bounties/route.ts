@@ -7,33 +7,23 @@ const createBountySchema = z.object({
   title: z.string().min(1).max(100),
   company: z.string().min(1).max(100),
   category: z.enum([
-    "PRODUCTIVITY",
-    "SOCIAL_MEDIA",
-    "MOBILE_OS",
-    "COMMUNICATION",
-    "DEVELOPMENT",
-    "GAMING",
-    "IOT_DEVICES",
-    "SMART_HOME",
-    "WEARABLES",
-    "ENTERTAINMENT",
-    "EDUCATION",
-    "HEALTH_FITNESS",
+    "MEDIA_PLAYERS",
+    "ONLINE_GAMES",
+    "SMART_DEVICES",
+    "MOBILE_APPS",
+    "DESKTOP_SOFTWARE",
+    "STREAMING_SERVICES",
+    "SOCIAL_PLATFORMS",
+    "PRODUCTIVITY_TOOLS",
+    "CLOUD_SERVICES",
+    "MESSAGING_APPS",
+    "WEARABLE_DEVICES",
     "OTHER",
   ]),
   description: z.string().min(1).max(500),
   longDescription: z.string().min(1),
+  whatStoppedWorking: z.string().min(1),
   imageUrl: z.string().url().optional(),
-  fundingGoal: z.number().min(100),
-  fundingDeadline: z.string().datetime(),
-  milestones: z.array(
-    z.object({
-      title: z.string(),
-      description: z.string(),
-      targetAmount: z.number(),
-      dueDate: z.string().datetime().optional(),
-    })
-  ).optional(),
 })
 
 // GET /api/bounties - Get all bounties with filtering
@@ -143,18 +133,17 @@ export async function POST(request: Request) {
 
     const bounty = await prisma.bounty.create({
       data: {
-        ...validatedData,
+        title: validatedData.title,
+        company: validatedData.company,
+        category: validatedData.category,
+        description: validatedData.description,
+        longDescription: validatedData.longDescription + (validatedData.whatStoppedWorking ? `\n\nFeatures that stopped working:\n${validatedData.whatStoppedWorking}` : ''),
+        imageUrl: validatedData.imageUrl,
         creatorId: user.id,
-        fundingDeadline: new Date(validatedData.fundingDeadline),
-        milestones: validatedData.milestones
-          ? {
-              create: validatedData.milestones.map((milestone, index) => ({
-                ...milestone,
-                dueDate: milestone.dueDate ? new Date(milestone.dueDate) : null,
-                order: index,
-              })),
-            }
-          : undefined,
+        // Flexible funding defaults
+        fundingGoal: 999999999, // Very high default since it's flexible
+        fundingDeadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        status: "ACTIVE",
       },
       include: {
         creator: {
@@ -164,7 +153,6 @@ export async function POST(request: Request) {
             image: true,
           },
         },
-        milestones: true,
       },
     })
 

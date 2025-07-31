@@ -159,16 +159,14 @@ export default async function HomePage() {
                 <CardContent className="pt-0">
                   <div className="space-y-4">
                     <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-slate-900">${bounty.fundingCurrent.toLocaleString()} raised</span>
-                        <span className="text-slate-500">${bounty.fundingGoal.toLocaleString()} goal</span>
+                      <div className="text-sm mb-2">
+                        <span className="font-medium text-slate-900">${bounty.fundingCurrent.toLocaleString()} contributed</span>
                       </div>
-                      <Progress value={(bounty.fundingCurrent / bounty.fundingGoal) * 100} className="h-2" />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm text-slate-600">
                         <Users className="mr-1 h-4 w-4" />
-                        {bounty.backers.toLocaleString()} backers
+                        {bounty.backers.toLocaleString()} contributors
                       </div>
                       <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
                         <Link href={`/bounty/${bounty.id}`}>

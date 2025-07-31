@@ -13,9 +13,10 @@ const contributeSchema = z.object({
 // POST /api/bounties/[id]/contribute - Create a contribution
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function POST(
     }
 
     const bounty = await prisma.bounty.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         title: true,
@@ -67,7 +68,7 @@ export async function POST(
     // Create contribution record
     const contribution = await prisma.contribution.create({
       data: {
-        bountyId: params.id,
+        bountyId: id,
         userId: user.id,
         amount: validatedData.amount,
         message: validatedData.message,
@@ -82,8 +83,8 @@ export async function POST(
       bountyId: bounty.id,
       bountyTitle: bounty.title,
       amount: validatedData.amount,
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/bounty/${bounty.id}?contribution=success`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/bounty/${bounty.id}?contribution=cancelled`,
+      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/bounty/${id}?contribution=success`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/bounty/${id}?contribution=cancelled`,
     })
 
     // Update contribution with Stripe session ID

@@ -11,16 +11,17 @@ const createCommentSchema = z.object({
 // GET /api/bounties/[id]/comments - Get comments for a bounty
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get("limit") || "20")
     const offset = parseInt(searchParams.get("offset") || "0")
 
     const comments = await prisma.comment.findMany({
       where: {
-        bountyId: params.id,
+        bountyId: id,
         parentId: null, // Only get top-level comments
       },
       orderBy: {
@@ -34,12 +35,6 @@ export async function GET(
             id: true,
             name: true,
             image: true,
-          },
-        },
-        // Get replies
-        _count: {
-          select: {
-            _all: true,
           },
         },
       },
@@ -75,7 +70,7 @@ export async function GET(
 
     const total = await prisma.comment.count({
       where: {
-        bountyId: params.id,
+        bountyId: id,
         parentId: null,
       },
     })
@@ -97,9 +92,10 @@ export async function GET(
 // POST /api/bounties/[id]/comments - Create a new comment
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json(
@@ -109,7 +105,7 @@ export async function POST(
     }
 
     const bounty = await prisma.bounty.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { 
         allowComments: true,
         title: true,
@@ -139,7 +135,7 @@ export async function POST(
         where: { id: validatedData.parentId },
       })
 
-      if (!parentComment || parentComment.bountyId !== params.id) {
+      if (!parentComment || parentComment.bountyId !== id) {
         return NextResponse.json(
           { error: "Invalid parent comment" },
           { status: 400 }
@@ -150,7 +146,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         ...validatedData,
-        bountyId: params.id,
+        bountyId: id,
         userId: user.id,
       },
       include: {
@@ -178,7 +174,7 @@ export async function POST(
             type: "COMMENT_REPLY",
             title: "New reply to your comment",
             message: `${user.name || "Someone"} replied to your comment on ${bounty.title}`,
-            link: `/bounty/${params.id}#comment-${comment.id}`,
+            link: `/bounty/${id}#comment-${comment.id}`,
           },
         })
       }

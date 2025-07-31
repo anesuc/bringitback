@@ -161,9 +161,8 @@ export default function BrowsePage() {
             <SelectContent>
               <SelectItem value="trending">Trending</SelectItem>
               <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="ending-soon">Ending Soon</SelectItem>
               <SelectItem value="most-funded">Most Funded</SelectItem>
-              <SelectItem value="most-backers">Most Backers</SelectItem>
+              <SelectItem value="most-contributors">Most Contributors</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -209,9 +208,8 @@ export default function BrowsePage() {
                   <Badge variant="secondary" className="text-xs">
                     {bounty.category}
                   </Badge>
-                  <div className="flex items-center text-sm text-slate-500">
-                    <Clock className="mr-1 h-3 w-3" />
-                    {bounty.timeLeft}
+                  <div className="text-xs text-slate-500">
+                    Flexible funding
                   </div>
                 </div>
                 <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">{bounty.title}</CardTitle>
@@ -220,16 +218,14 @@ export default function BrowsePage() {
               <CardContent className="pt-0">
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="font-medium text-slate-900">${bounty.raised.toLocaleString()} raised</span>
-                      <span className="text-slate-500">${bounty.goal.toLocaleString()} goal</span>
+                    <div className="text-sm mb-2">
+                      <span className="font-medium text-slate-900">${bounty.raised.toLocaleString()} contributed</span>
                     </div>
-                    <Progress value={(bounty.raised / bounty.goal) * 100} className="h-2" />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm text-slate-600">
                       <Users className="mr-1 h-4 w-4" />
-                      {bounty.backers.toLocaleString()} backers
+                      {bounty.backers.toLocaleString()} contributors
                     </div>
                     <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
                       <Link href={`/bounty/${bounty.id}`}>

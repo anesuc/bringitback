@@ -33,6 +33,9 @@ model User {
   comments        Comment[]
   savedBounties   SavedBounty[]
   notifications   Notification[]
+  solutions       Solution[]
+  solutionVotes   SolutionVote[]
+  updates         Update[]
   
   stripeCustomerId     String?
   stripeConnectId      String?
@@ -101,6 +104,7 @@ model Bounty {
   updates          Update[]
   comments         Comment[]
   savedBy          SavedBounty[]
+  solutions        Solution[]
   
   // Stripe related
   stripeProductId  String?         @unique
@@ -169,6 +173,8 @@ model Update {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   bountyId    String    @db.ObjectId
   bounty      Bounty    @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  authorId    String?   @db.ObjectId
+  author      User?     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title       String
   content     String
   imageUrl    String?
@@ -213,18 +219,17 @@ model Notification {
 
 // Enums
 enum Category {
-  PRODUCTIVITY
-  SOCIAL_MEDIA
-  MOBILE_OS
-  COMMUNICATION
-  DEVELOPMENT
-  GAMING
-  IOT_DEVICES
-  SMART_HOME
-  WEARABLES
-  ENTERTAINMENT
-  EDUCATION
-  HEALTH_FITNESS
+  MEDIA_PLAYERS
+  ONLINE_GAMES
+  SMART_DEVICES
+  MOBILE_APPS
+  DESKTOP_SOFTWARE
+  STREAMING_SERVICES
+  SOCIAL_PLATFORMS
+  PRODUCTIVITY_TOOLS
+  CLOUD_SERVICES
+  MESSAGING_APPS
+  WEARABLE_DEVICES
   OTHER
 }
 
@@ -260,4 +265,49 @@ enum NotificationType {
   COMMENT_REPLY
   BOUNTY_EXPIRED
   REFUND_PROCESSED
+  SOLUTION_SUBMITTED
+  SOLUTION_ACCEPTED
+  SOLUTION_REJECTED
+}
+
+model Solution {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  bountyId      String          @db.ObjectId
+  bounty        Bounty          @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  submitterId   String          @db.ObjectId
+  submitter     User            @relation(fields: [submitterId], references: [id])
+  title         String
+  description   String
+  implementation String         // URL to GitHub repo, demo, etc.
+  status        SolutionStatus  @default(PENDING)
+  voteCount     Int             @default(0)
+  totalVoters   Int             @default(0) // Total number of eligible voters when submitted
+  acceptedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  votes         SolutionVote[]
+}
+
+model SolutionVote {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  solutionId   String    @db.ObjectId
+  solution     Solution  @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  voterId      String    @db.ObjectId
+  voter        User      @relation(fields: [voterId], references: [id])
+  vote         VoteType
+  createdAt    DateTime  @default(now())
+  
+  @@unique([solutionId, voterId])
+}
+
+enum SolutionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum VoteType {
+  APPROVE
+  REJECT
 }

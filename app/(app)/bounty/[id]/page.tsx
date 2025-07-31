@@ -5,16 +5,25 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Users, Target, Share2, Heart, MessageCircle, Calendar, DollarSign, CheckCircle } from "lucide-react"
+import { ArrowLeft, Users, Target, Share2, Heart, MessageCircle, Calendar, DollarSign, CheckCircle, Copy, Check } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
+import ShareSection from "./share-section"
+import CommentsSection from "./comments-section"
+import SolutionsSection from "./solutions-section"
+import UpdatesSection from "./updates-section"
+import ContributeButton from "./contribute-button"
+import { getCurrentUser } from "@/lib/session"
 
-export default async function BountyDetailPage({ params }: { params: { id: string } }) {
+export default async function BountyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const currentUser = await getCurrentUser()
+  
   // Fetch bounty data from database
   const bounty = await prisma.bounty.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       creator: {
         select: {
@@ -58,6 +67,14 @@ export default async function BountyDetailPage({ params }: { params: { id: strin
   if (!bounty) {
     notFound()
   }
+
+  // Check if current user has submitted a solution
+  const userHasSolution = currentUser ? await prisma.solution.findFirst({
+    where: {
+      bountyId: id,
+      submitterId: currentUser.id,
+    },
+  }) : null
 
   // Calculate time left
   const now = new Date()
@@ -137,106 +154,72 @@ export default async function BountyDetailPage({ params }: { params: { id: strin
 
             {/* Tabs */}
             <Tabs defaultValue="story" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="story">Story</TabsTrigger>
+                <TabsTrigger value="solutions">Solutions</TabsTrigger>
                 <TabsTrigger value="updates">Updates</TabsTrigger>
                 <TabsTrigger value="comments">Comments</TabsTrigger>
-                <TabsTrigger value="backers">Backers</TabsTrigger>
+                <TabsTrigger value="backers">Contributors</TabsTrigger>
               </TabsList>
 
               <TabsContent value="story" className="mt-6">
                 <div className="prose max-w-none">
                   <p className="text-slate-700 leading-relaxed">{bounty.longDescription}</p>
-
-                  <h3 className="text-xl font-semibold text-slate-900 mt-8 mb-4">Why This Restoration Matters</h3>
-                  <ul className="space-y-2 text-slate-700">
-                    <li>• Millions of people organized their daily information consumption around this service</li>
-                    <li>• Users invested significant time curating and organizing their RSS feeds</li>
-                    <li>• No replacement has matched the reliability and features people depended on</li>
-                    <li>• People deserve to have the functionality they relied on restored</li>
-                  </ul>
-
-                  <h3 className="text-xl font-semibold text-slate-900 mt-8 mb-4">Funding Milestones</h3>
-                  <div className="space-y-4">
-                    {bounty.milestones.map((milestone) => (
-                      <div key={milestone.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                            milestone.completed ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400"
-                          }`}
-                        >
-                          {milestone.completed ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            <DollarSign className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-slate-900">${milestone.targetAmount.toLocaleString()}</p>
-                          <p className="text-sm text-slate-600">{milestone.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="solutions" className="mt-6">
+                <SolutionsSection bountyId={id} />
               </TabsContent>
 
               <TabsContent value="updates" className="mt-6">
-                <div className="space-y-6">
-                  {bounty.updates.length > 0 ? (
-                    bounty.updates.map((update) => (
-                      <Card key={update.id}>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">{update.title}</CardTitle>
-                            <div className="flex items-center text-sm text-slate-500">
-                              <Calendar className="mr-1 h-4 w-4" />
-                              {new Date(update.createdAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-slate-700">{update.content}</p>
-                          <p className="text-sm text-slate-500 mt-2">By {bounty.creator.name || 'Creator'}</p>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-600">No updates yet</p>
-                    </div>
-                  )}
-                </div>
+                <UpdatesSection 
+                  bountyId={id}
+                  currentUserId={currentUser?.id}
+                  isCreator={currentUser?.id === bounty.creator.id}
+                  hasSolutionSubmission={!!userHasSolution}
+                />
               </TabsContent>
 
               <TabsContent value="comments" className="mt-6">
-                <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600">Comments will be available soon</p>
-                </div>
+                <CommentsSection bountyId={id} />
               </TabsContent>
 
               <TabsContent value="backers" className="mt-6">
-                <div className="space-y-4">
-                  {recentBackers.map((backer, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarImage src={backer.avatar || "/placeholder.svg"} alt={backer.name} />
-                          <AvatarFallback>
-                            {backer.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-slate-900">{backer.name}</span>
+                {recentBackers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                    <p className="text-slate-600 mb-4">No contributors yet</p>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Be the first to support this restoration project and help bring this device back to life!
+                    </p>
+                    <ContributeButton
+                      bountyId={id}
+                      bountyTitle={bounty.title}
+                      variant="empty-state"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentBackers.map((backer, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <Avatar>
+                            <AvatarImage src={backer.avatar || "/placeholder.svg"} alt={backer.name} />
+                            <AvatarFallback>
+                              {backer.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-slate-900">{backer.name}</span>
+                        </div>
+                        <Badge variant="secondary">${backer.amount}</Badge>
                       </div>
-                      <Badge variant="secondary">${backer.amount}</Badge>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -247,10 +230,10 @@ export default async function BountyDetailPage({ params }: { params: { id: strin
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl text-slate-900">${bounty.fundingCurrent.toLocaleString()}</CardTitle>
-                <CardDescription>raised of ${bounty.fundingGoal.toLocaleString()} goal</CardDescription>
+                <CardDescription>contributed so far</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <Progress value={(bounty.fundingCurrent / bounty.fundingGoal) * 100} className="h-3" />
+                {/* No progress bar for flexible funding */}
 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
@@ -258,29 +241,32 @@ export default async function BountyDetailPage({ params }: { params: { id: strin
                     <div className="text-sm text-slate-600">backers</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">{timeLeft}</div>
-                    <div className="text-sm text-slate-600">to go</div>
+                    <div className="text-2xl font-bold text-slate-900">
+                      {bounty.status === "COMPLETED" ? "Completed" : "Ongoing"}
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      {bounty.status === "COMPLETED" ? "solution accepted" : "flexible funding"}
+                    </div>
                   </div>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-3">
-                  <Button
-                    size="lg"
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                  >
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Fund This Restoration
-                  </Button>
-                  <Button variant="outline" size="lg" className="w-full bg-transparent">
-                    <Heart className="mr-2 h-4 w-4" />
-                    Save for Later
-                  </Button>
+                  <ContributeButton
+                    bountyId={id}
+                    bountyTitle={bounty.title}
+                    variant="primary"
+                  />
+                  <ContributeButton
+                    bountyId={id}
+                    bountyTitle={bounty.title}
+                    variant="secondary"
+                  />
                 </div>
 
                 <div className="text-xs text-slate-500 text-center">
-                  All or nothing. This bounty will only be funded if it reaches its goal by the deadline.
+                  Flexible funding. All contributions go toward making this restoration happen.
                 </div>
               </CardContent>
             </Card>
@@ -320,30 +306,10 @@ export default async function BountyDetailPage({ params }: { params: { id: strin
             </Card>
 
             {/* Share */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Share2 className="mr-2 h-5 w-5" />
-                  Share This Bounty
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm">
-                    Twitter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Facebook
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    LinkedIn
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Copy Link
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ShareSection 
+              bountyTitle={bounty.title}
+              bountyUrl={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/bounty/${id}`}
+            />
           </div>
         </div>
       </div>

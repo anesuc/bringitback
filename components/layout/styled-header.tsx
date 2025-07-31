@@ -1,12 +1,27 @@
 "use client"
 
 import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Target } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Target, User, LogOut } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function StyledHeader() {
   const { data: session } = useSession()
+  
+  // Debug logging
+  console.log('Session data in header:', {
+    name: session?.user?.name,
+    email: session?.user?.email,
+    image: session?.user?.image
+  })
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
@@ -42,6 +57,53 @@ export function StyledHeader() {
                 >
                   <Link href="/create">Create Bounty</Link>
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage 
+                          src={session.user?.image || undefined} 
+                          alt={session.user?.name || 'User'}
+                          onError={() => console.log('Avatar image failed to load:', session.user?.image)}
+                          onLoad={() => console.log('Avatar image loaded successfully:', session.user?.image)}
+                        />
+                        <AvatarFallback>
+                          {session.user?.name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("") || <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        {session.user?.name && <p className="font-medium">{session.user.name}</p>}
+                        {session.user?.email && (
+                          <p className="w-[200px] truncate text-sm text-muted-foreground">
+                            {session.user.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onSelect={() => signOut({ callbackUrl: "/" })}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,41 +15,107 @@ import Link from "next/link"
 
 export default function CreateBountyPage() {
   const [step, setStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
+  const { data: session } = useSession()
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     longDescription: "",
     category: "",
     company: "",
-    goal: "",
-    duration: "",
     image: null,
+    whatStoppedWorking: "",
   })
 
   const categories = [
-    "Productivity",
-    "Social Media",
-    "Mobile OS",
-    "Communication",
-    "Development",
-    "Gaming",
-    "Entertainment",
-    "Education",
-    "Finance",
-    "Health & Fitness",
+    { value: "MEDIA_PLAYERS", label: "Media Players" },
+    { value: "ONLINE_GAMES", label: "Online Games" },
+    { value: "SMART_DEVICES", label: "Smart Devices" },
+    { value: "MOBILE_APPS", label: "Mobile Apps" },
+    { value: "DESKTOP_SOFTWARE", label: "Desktop Software" },
+    { value: "STREAMING_SERVICES", label: "Streaming Services" },
+    { value: "SOCIAL_PLATFORMS", label: "Social Platforms" },
+    { value: "PRODUCTIVITY_TOOLS", label: "Productivity Tools" },
+    { value: "CLOUD_SERVICES", label: "Cloud Services" },
+    { value: "MESSAGING_APPS", label: "Messaging Apps" },
+    { value: "WEARABLE_DEVICES", label: "Wearable Devices" },
+    { value: "OTHER", label: "Other" },
   ]
 
   const handleNext = () => {
-    if (step < 4) setStep(step + 1)
+    if (step < 3) setStep(step + 1)
   }
 
   const handlePrevious = () => {
     if (step > 1) setStep(step - 1)
   }
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log("Submitting bounty:", formData)
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setFormData({ ...formData, image: file })
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!session) {
+      router.push('/auth/signin')
+      return
+    }
+
+    if (!formData.title || !formData.company || !formData.category || !formData.description || !formData.longDescription || !formData.whatStoppedWorking) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      const response = await fetch('/api/bounties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          company: formData.company,
+          category: formData.category,
+          description: formData.description,
+          longDescription: formData.longDescription,
+          whatStoppedWorking: formData.whatStoppedWorking,
+          imageUrl: formData.image ? undefined : undefined, // TODO: Handle image upload
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create bounty')
+      }
+
+      const bounty = await response.json()
+      router.push(`/bounty/${bounty.id}`)
+    } catch (error) {
+      console.error('Error creating bounty:', error)
+      alert('Failed to create bounty. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Redirect to login if not authenticated
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Please Sign In</h1>
+          <p className="text-slate-600 mb-6">You need to be signed in to create a restoration campaign.</p>
+          <Button asChild>
+            <Link href="/auth/signin">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -65,7 +133,7 @@ export default function CreateBountyPage() {
           {/* Progress Steps */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              {[1, 2, 3, 4].map((stepNumber) => (
+              {[1, 2, 3].map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
@@ -74,8 +142,8 @@ export default function CreateBountyPage() {
                   >
                     {step > stepNumber ? <CheckCircle className="h-5 w-5" /> : stepNumber}
                   </div>
-                  {stepNumber < 4 && (
-                    <div className={`h-1 w-24 mx-4 ${step > stepNumber ? "bg-blue-500" : "bg-slate-200"}`} />
+                  {stepNumber < 3 && (
+                    <div className={`h-1 w-32 mx-4 ${step > stepNumber ? "bg-blue-500" : "bg-slate-200"}`} />
                   )}
                 </div>
               ))}
@@ -83,7 +151,6 @@ export default function CreateBountyPage() {
             <div className="flex justify-between text-sm text-slate-600">
               <span>Basic Info</span>
               <span>Details</span>
-              <span>Funding</span>
               <span>Review</span>
             </div>
           </div>
@@ -94,14 +161,12 @@ export default function CreateBountyPage() {
               <CardTitle>
                 {step === 1 && "Basic Information"}
                 {step === 2 && "Project Details"}
-                {step === 3 && "Funding Goals"}
-                {step === 4 && "Review & Submit"}
+                {step === 3 && "Review & Submit"}
               </CardTitle>
               <CardDescription>
                 {step === 1 && "Tell us about the product or service that stopped working"}
                 {step === 2 && "Provide detailed information about your restoration campaign"}
-                {step === 3 && "Set your funding goal and timeline"}
-                {step === 4 && "Review your restoration campaign before publishing"}
+                {step === 3 && "Review your restoration campaign before publishing"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -111,7 +176,7 @@ export default function CreateBountyPage() {
                     <Label htmlFor="title">Product/Service That Stopped Working *</Label>
                     <Input
                       id="title"
-                      placeholder="e.g., Google Reader"
+                      placeholder="e.g., Zune HD, Nintendo DSi Shop, Guitar Hero Live"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
@@ -121,7 +186,7 @@ export default function CreateBountyPage() {
                     <Label htmlFor="company">Original Company</Label>
                     <Input
                       id="company"
-                      placeholder="e.g., Google"
+                      placeholder="e.g., Microsoft, Nintendo, Activision"
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     />
@@ -138,8 +203,8 @@ export default function CreateBountyPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -150,7 +215,7 @@ export default function CreateBountyPage() {
                     <Label htmlFor="description">What Stopped Working *</Label>
                     <Textarea
                       id="description"
-                      placeholder="Brief description of the product/service you purchased that no longer works (max 200 characters)"
+                      placeholder="e.g., Game console that can't download games since shop servers were shut down"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       maxLength={200}
@@ -166,7 +231,7 @@ export default function CreateBountyPage() {
                     <Label htmlFor="longDescription">Why This Needs to Work Again *</Label>
                     <Textarea
                       id="longDescription"
-                      placeholder="Explain how you and others used this product, why it was important, and what happened when the company made it stop working..."
+                      placeholder="Describe how you and others used this device/software, what specific features became inaccessible when the company shut down servers, and why restoring functionality would benefit people who still own it..."
                       value={formData.longDescription}
                       onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
                       rows={8}
@@ -175,95 +240,48 @@ export default function CreateBountyPage() {
 
                   <div className="space-y-2">
                     <Label>Project Image</Label>
-                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors cursor-pointer">
+                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors">
                       <ImageIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                       <p className="text-slate-600 mb-2">Upload an image for your bounty</p>
                       <p className="text-sm text-slate-500">PNG, JPG up to 10MB</p>
-                      <Button variant="outline" className="mt-4 bg-transparent">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Choose File
-                      </Button>
+                      {formData.image && (
+                        <p className="text-sm text-green-600 mt-2">
+                          Selected: {(formData.image as File).name}
+                        </p>
+                      )}
+                      <div className="mt-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <Button variant="outline" className="bg-transparent" asChild>
+                          <label htmlFor="image-upload" className="cursor-pointer">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Choose File
+                          </label>
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <Label>Why This Matters</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Card className="p-4">
-                        <h4 className="font-medium mb-2">Who Was Affected</h4>
-                        <p className="text-sm text-slate-600">
-                          How many people purchased or relied on this product/service?
-                        </p>
-                      </Card>
-                      <Card className="p-4">
-                        <h4 className="font-medium mb-2">What Was Lost</h4>
-                        <p className="text-sm text-slate-600">
-                          What functionality did people lose when the company shut it down?
-                        </p>
-                      </Card>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatStoppedWorking">What Features Stopped Working *</Label>
+                    <Textarea
+                      id="whatStoppedWorking"
+                      placeholder="e.g., Music marketplace, wireless sync, social features, podcast subscriptions, online multiplayer..."
+                      value={formData.whatStoppedWorking}
+                      onChange={(e) => setFormData({ ...formData, whatStoppedWorking: e.target.value })}
+                      rows={4}
+                    />
+                    <p className="text-sm text-slate-500">List the specific features that became unusable when servers were shut down</p>
                   </div>
                 </>
               )}
 
               {step === 3 && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="goal">Funding Goal *</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                      <Input
-                        id="goal"
-                        type="number"
-                        placeholder="100000"
-                        value={formData.goal}
-                        onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                        className="pl-10"
-                      />
-                    </div>
-                    <p className="text-sm text-slate-500">Set a realistic goal based on development complexity</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Campaign Duration *</Label>
-                    <Select
-                      value={formData.duration}
-                      onValueChange={(value) => setFormData({ ...formData, duration: value })}
-                    >
-                      <SelectTrigger>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 days</SelectItem>
-                        <SelectItem value="60">60 days</SelectItem>
-                        <SelectItem value="90">90 days</SelectItem>
-                        <SelectItem value="120">120 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label>Funding Milestones</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                          <Target className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1">
-                          <Input placeholder="Milestone amount" className="mb-2" />
-                          <Input placeholder="What will be delivered at this milestone" />
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Add Milestone
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {step === 4 && (
                 <div className="space-y-6">
                   <div className="bg-slate-50 rounded-lg p-6">
                     <h3 className="text-lg font-semibold mb-4">Bounty Preview</h3>
@@ -279,27 +297,23 @@ export default function CreateBountyPage() {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-slate-600">Funding Goal</Label>
-                        <p className="text-slate-900">
-                          ${formData.goal ? Number.parseInt(formData.goal).toLocaleString() : "Not specified"}
-                        </p>
+                        <Label className="text-sm font-medium text-slate-600">Company</Label>
+                        <p className="text-slate-900">{formData.company || "Not specified"}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-slate-600">Duration</Label>
-                        <p className="text-slate-900">
-                          {formData.duration ? `${formData.duration} days` : "Not specified"}
-                        </p>
+                        <Label className="text-sm font-medium text-slate-600">Description</Label>
+                        <p className="text-slate-900">{formData.description || "Not specified"}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Before You Submit Your Restoration</h4>
+                    <h4 className="font-medium text-blue-900 mb-2">How Flexible Funding Works</h4>
                     <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• Make sure all information about the broken product is accurate</li>
-                      <li>• Your restoration campaign will be reviewed before going live</li>
-                      <li>• You'll be notified within 24-48 hours about approval status</li>
-                      <li>• Focus on products that people actually purchased or actively used</li>
+                      <li>• People contribute any amount toward your restoration bounty</li>
+                      <li>• Developers can see the total funding available before deciding to take it on</li>
+                      <li>• No funding goals - just growing community interest and available money</li>
+                      <li>• Your campaign will be reviewed before going live (24-48 hours)</li>
                     </ul>
                   </div>
                 </div>
@@ -314,14 +328,15 @@ export default function CreateBountyPage() {
             </Button>
             <div className="space-x-4">
               <Button variant="ghost">Save Draft</Button>
-              {step < 4 ? (
+              {step < 3 ? (
                 <Button onClick={handleNext}>Next</Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                 >
-                  Submit Restoration Campaign
+                  {isSubmitting ? "Creating..." : "Submit Restoration Campaign"}
                 </Button>
               )}
             </div>

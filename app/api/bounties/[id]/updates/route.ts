@@ -12,12 +12,22 @@ const createUpdateSchema = z.object({
 // GET /api/bounties/[id]/updates - Get all updates for a bounty
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const updates = await prisma.update.findMany({
       where: {
-        bountyId: params.id,
+        bountyId: id,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -37,9 +47,10 @@ export async function GET(
 // POST /api/bounties/[id]/updates - Create a new update
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json(
@@ -49,7 +60,7 @@ export async function POST(
     }
 
     const bounty = await prisma.bounty.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { creatorId: true, title: true },
     })
 
@@ -60,9 +71,18 @@ export async function POST(
       )
     }
 
-    if (bounty.creatorId !== user.id) {
+    // Check if user is creator or has submitted a solution
+    const isCreator = bounty.creatorId === user.id
+    const hasSolution = await prisma.solution.findFirst({
+      where: {
+        bountyId: id,
+        submitterId: user.id,
+      },
+    })
+
+    if (!isCreator && !hasSolution) {
       return NextResponse.json(
-        { error: "Forbidden" },
+        { error: "Only bounty creators and solution submitters can post updates" },
         { status: 403 }
       )
     }
@@ -73,14 +93,24 @@ export async function POST(
     const update = await prisma.update.create({
       data: {
         ...validatedData,
-        bountyId: params.id,
+        bountyId: id,
+        authorId: user.id,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
       },
     })
 
     // Create notifications for all contributors
     const contributors = await prisma.contribution.findMany({
       where: {
-        bountyId: params.id,
+        bountyId: id,
         status: "COMPLETED",
       },
       select: {
@@ -96,7 +126,7 @@ export async function POST(
           type: "BOUNTY_UPDATE",
           title: "New update on supported bounty",
           message: `${bounty.title} has a new update: ${validatedData.title}`,
-          link: `/bounty/${params.id}`,
+          link: `/bounty/${id}`,
         })),
       })
     }
