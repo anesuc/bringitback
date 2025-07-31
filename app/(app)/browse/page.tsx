@@ -1,120 +1,137 @@
-"use client"
-
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowRight, Search, Filter, Users, Clock, Target, TrendingUp, Heart } from "lucide-react"
+import { ArrowRight, Users, TrendingUp, Heart } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { prisma } from "@/lib/prisma"
+import BrowseFilters from "./browse-filters"
 
-export default function BrowsePage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [sortBy, setSortBy] = useState("trending")
+// Trending algorithm: calculates trending score based on recent activity
+function calculateTrendingScore(bounty: any): number {
+  const now = new Date()
+  const daysSinceCreated = Math.max(1, (now.getTime() - new Date(bounty.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  
+  // Recent contributions (last 7 days) get higher weight
+  const recentContributions = bounty.contributions?.filter((c: any) => {
+    const contributionAge = (now.getTime() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    return contributionAge <= 7
+  }).length || 0
+  
+  // Recent comments (last 7 days) 
+  const recentComments = bounty.comments?.filter((c: any) => {
+    const commentAge = (now.getTime() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    return commentAge <= 7
+  }).length || 0
+  
+  // Recent solutions (last 14 days)
+  const recentSolutions = bounty.solutions?.filter((s: any) => {
+    const solutionAge = (now.getTime() - new Date(s.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+    return solutionAge <= 14
+  }).length || 0
+  
+  // Calculate trending score
+  const contributionScore = recentContributions * 10
+  const commentScore = recentComments * 3
+  const solutionScore = recentSolutions * 20
+  const fundingScore = (bounty.fundingCurrent / 1000) * 2
+  const contributorScore = bounty._count.contributions * 1
+  
+  // Age decay factor (newer bounties get slight boost)
+  const ageDecay = Math.max(0.1, 1 - (daysSinceCreated / 365))
+  
+  return (contributionScore + commentScore + solutionScore + fundingScore + contributorScore) * ageDecay
+}
 
-  const bounties = [
-    {
-      id: 1,
-      title: "Google Reader",
-      description: "Revive the beloved RSS reader that millions relied on for news aggregation",
-      company: "Google",
-      raised: 125000,
-      goal: 500000,
-      backers: 2847,
-      timeLeft: "23 days",
-      category: "Productivity",
-      trending: true,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 2,
-      title: "Vine",
-      description: "Restore the 6-second video platform that launched countless creators",
-      company: "Twitter",
-      raised: 89000,
-      goal: 300000,
-      backers: 1923,
-      timeLeft: "45 days",
-      category: "Social Media",
-      trending: true,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 3,
-      title: "Windows Phone",
-      description: "Revive the innovative mobile OS with its unique tile interface",
-      company: "Microsoft",
-      raised: 67000,
-      goal: 1000000,
-      backers: 1456,
-      timeLeft: "67 days",
-      category: "Mobile OS",
-      trending: false,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 4,
-      title: "Google Wave",
-      description: "Restore the real-time collaborative communication platform",
-      company: "Google",
-      raised: 34000,
-      goal: 200000,
-      backers: 892,
-      timeLeft: "12 days",
-      category: "Communication",
-      trending: false,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 5,
-      title: "Adobe Flash Player",
-      description: "Revive Flash support for legacy games and animations",
-      company: "Adobe",
-      raised: 156000,
-      goal: 750000,
-      backers: 3421,
-      timeLeft: "89 days",
-      category: "Development",
-      trending: true,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 6,
-      title: "Clubhouse Audio Rooms",
-      description: "Restore the original audio-only social networking experience",
-      company: "Clubhouse",
-      raised: 23000,
-      goal: 150000,
-      backers: 567,
-      timeLeft: "34 days",
-      category: "Social Media",
-      trending: false,
-      image: "/placeholder.svg?height=200&width=300",
-    },
-  ]
+interface BrowsePageProps {
+  searchParams?: {
+    search?: string
+    category?: string
+    sort?: string
+  }
+}
 
-  const categories = [
-    "all",
-    "Productivity",
-    "Social Media",
-    "Mobile OS",
-    "Communication",
-    "Development",
-    "Gaming",
-    "Entertainment",
-  ]
+export default async function BrowsePage({ searchParams }: BrowsePageProps) {
+  const search = searchParams?.search || ""
+  const category = searchParams?.category || "all"
+  const sortBy = searchParams?.sort || "trending"
 
-  const filteredBounties = bounties.filter((bounty) => {
-    const matchesSearch =
-      bounty.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bounty.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || bounty.category === selectedCategory
-    return matchesSearch && matchesCategory
+  // Fetch bounties with related data for trending calculation
+  const bounties = await prisma.bounty.findMany({
+    where: {
+      status: "ACTIVE",
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { company: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+      ...(category !== "all" && { category }),
+    },
+    include: {
+      _count: {
+        select: {
+          contributions: {
+            where: { status: "COMPLETED" }
+          },
+          comments: true,
+          solutions: true,
+        },
+      },
+      contributions: {
+        where: { status: "COMPLETED" },
+        select: {
+          createdAt: true,
+          amount: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50, // Get recent contributions for trending calc
+      },
+      comments: {
+        select: { createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 50, // Get recent comments for trending calc
+      },
+      solutions: {
+        select: { createdAt: true, status: true },
+        orderBy: { createdAt: "desc" },
+        take: 20, // Get recent solutions for trending calc
+      },
+    },
   })
+
+  // Calculate trending scores and sort
+  const bountiesWithTrending = bounties.map(bounty => ({
+    ...bounty,
+    trendingScore: calculateTrendingScore(bounty),
+    isTrending: calculateTrendingScore(bounty) > 20, // Threshold for trending badge
+  }))
+
+  // Sort bounties based on selected criteria
+  let sortedBounties = [...bountiesWithTrending]
+  switch (sortBy) {
+    case "trending":
+      sortedBounties.sort((a, b) => b.trendingScore - a.trendingScore)
+      break
+    case "newest":
+      sortedBounties.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      break
+    case "most-funded":
+      sortedBounties.sort((a, b) => b.fundingCurrent - a.fundingCurrent)
+      break
+    case "most-contributors":
+      sortedBounties.sort((a, b) => b._count.contributions - a._count.contributions)
+      break
+  }
+
+  // Get unique categories from actual data
+  const allCategories = await prisma.bounty.findMany({
+    where: { status: "ACTIVE" },
+    select: { category: true },
+    distinct: ["category"],
+  })
+  const categories = ["all", ...allCategories.map(b => b.category).filter(Boolean)]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
@@ -128,68 +145,35 @@ export default function BrowsePage() {
         </div>
 
         {/* Filters */}
-        <div className="mb-8 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              placeholder="Search for products that stopped working..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-48">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category === "all" ? "All Categories" : category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-48">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="trending">Trending</SelectItem>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="most-funded">Most Funded</SelectItem>
-              <SelectItem value="most-contributors">Most Contributors</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <BrowseFilters 
+          categories={categories}
+          currentSearch={search}
+          currentCategory={category}
+          currentSort={sortBy}
+        />
 
         {/* Results Count */}
         <div className="mb-6">
           <p className="text-slate-600">
-            Showing {filteredBounties.length} of {bounties.length} restoration campaigns
+            Showing {sortedBounties.length} restoration campaigns
           </p>
         </div>
 
         {/* Bounties Grid */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredBounties.map((bounty) => (
-            <Card
-              key={bounty.id}
-              className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm"
-            >
+          {sortedBounties.map((bounty) => (
+            <Link key={bounty.id} href={`/bounty/${bounty.id}`}>
+              <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm cursor-pointer">
+              
               <div className="aspect-video overflow-hidden relative">
                 <Image
-                  src={bounty.image || "/placeholder.svg"}
+                  src={bounty.imageUrl || "/placeholder.svg"}
                   alt={bounty.title}
                   width={300}
                   height={200}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {bounty.trending && (
+                {bounty.isTrending && (
                   <Badge className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 border-0">
                     <TrendingUp className="mr-1 h-3 w-3" />
                     Trending
@@ -212,40 +196,47 @@ export default function BrowsePage() {
                     Flexible funding
                   </div>
                 </div>
-                <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">{bounty.title}</CardTitle>
-                <CardDescription className="text-slate-600">{bounty.description}</CardDescription>
+                <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
+                  {bounty.title}
+                </CardTitle>
+                <CardDescription className="text-slate-600">
+                  {bounty.description}
+                </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm mb-2">
-                      <span className="font-medium text-slate-900">${bounty.raised.toLocaleString()} contributed</span>
+                      <span className="font-medium text-slate-900">
+                        ${bounty.fundingCurrent.toLocaleString()} contributed
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm text-slate-600">
                       <Users className="mr-1 h-4 w-4" />
-                      {bounty.backers.toLocaleString()} contributors
+                      {bounty._count.contributions.toLocaleString()} contributors
                     </div>
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
-                      <Link href={`/bounty/${bounty.id}`}>
-                        View Details
-                        <ArrowRight className="ml-1 h-3 w-3" />
-                      </Link>
-                    </Button>
+                    <div className="flex items-center text-sm text-blue-600 group-hover:text-blue-700 transition-colors">
+                      View Details
+                      <ArrowRight className="ml-1 h-3 w-3" />
+                    </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
 
-        {/* Load More */}
-        <div className="text-center mt-12">
-          <Button variant="outline" size="lg">
-            Load More Bounties
-          </Button>
-        </div>
+        {sortedBounties.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-slate-600 mb-4">No bounties found matching your criteria.</p>
+            <Button asChild>
+              <Link href="/create">Create the First Bounty</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

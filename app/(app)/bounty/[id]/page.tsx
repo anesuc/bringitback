@@ -173,7 +173,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
               </TabsList>
 
               <TabsContent value="story" className="mt-6">
-                <div className="prose max-w-none">
+                <div className="prose max-w-none min-h-[300px]">
                   <p className="text-slate-700 leading-relaxed">{bounty.longDescription}</p>
                 </div>
               </TabsContent>

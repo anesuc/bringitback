@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowRight, Users, Zap, Target, TrendingUp, Clock } from "lucide-react"
+import { ArrowRight, Users, Zap, Target, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
@@ -40,30 +40,17 @@ export default async function HomePage() {
     },
   })
 
-  // Calculate time left for each bounty
-  const bountiesWithTimeLeft = featuredBounties.map((bounty) => {
-    const now = new Date()
-    const deadline = new Date(bounty.fundingDeadline)
-    const diffTime = deadline.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    let timeLeft = "Expired"
-    if (diffDays > 0) {
-      timeLeft = diffDays === 1 ? "1 day" : `${diffDays} days`
-    }
-
-    return {
-      ...bounty,
-      timeLeft,
-      backers: bounty._count.contributions,
-    }
-  })
+  // Prepare bounties data for display
+  const bountiesWithData = featuredBounties.map((bounty) => ({
+    ...bounty,
+    backers: bounty._count.contributions,
+  }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 sm:py-32">
+      <section className="relative overflow-hidden py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
@@ -100,9 +87,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-
       {/* Featured Bounties */}
-      <section className="py-20">
+      <section className="py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Active Restorations</h2>
@@ -111,7 +97,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          {bountiesWithTimeLeft.length === 0 ? (
+          {bountiesWithData.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <div className="max-w-md mx-auto">
                 <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
@@ -129,11 +115,10 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {bountiesWithTimeLeft.map((bounty) => (
-              <Card
-                key={bounty.id}
-                className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm"
-              >
+              {bountiesWithData.map((bounty) => (
+              <Link key={bounty.id} href={`/bounty/${bounty.id}`}>
+                <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm cursor-pointer">
+                
                 <div className="aspect-video overflow-hidden">
                   <Image
                     src={bounty.imageUrl || "/placeholder.svg"}
@@ -148,9 +133,8 @@ export default async function HomePage() {
                     <Badge variant="secondary" className="text-xs">
                       {bounty.category}
                     </Badge>
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Clock className="mr-1 h-3 w-3" />
-                      {bounty.timeLeft}
+                    <div className="text-xs text-slate-500">
+                      Flexible funding
                     </div>
                   </div>
                   <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">{bounty.title}</CardTitle>
@@ -168,21 +152,20 @@ export default async function HomePage() {
                         <Users className="mr-1 h-4 w-4" />
                         {bounty.backers.toLocaleString()} contributors
                       </div>
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
-                        <Link href={`/bounty/${bounty.id}`}>
-                          View Details
-                          <ArrowRight className="ml-1 h-3 w-3" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center text-sm text-blue-600 group-hover:text-blue-700 transition-colors">
+                        View Details
+                        <ArrowRight className="ml-1 h-3 w-3" />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
               ))}
             </div>
           )}
 
-          {bountiesWithTimeLeft.length > 0 && (
+          {bountiesWithData.length > 0 && (
             <div className="text-center mt-12">
             <Button variant="outline" size="lg" asChild>
               <Link href="/browse">
