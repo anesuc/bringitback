@@ -34,8 +34,8 @@ model User {
   savedBounties   SavedBounty[]
   notifications   Notification[]
   
-  stripeCustomerId     String?    @unique
-  stripeConnectId      String?    @unique
+  stripeCustomerId     String?
+  stripeConnectId      String?
   stripeConnectOnboarded Boolean  @default(false)
 }
 

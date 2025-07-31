@@ -1,5 +1,3 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,58 +8,77 @@ import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Users, Target, Share2, Heart, MessageCircle, Calendar, DollarSign, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { prisma } from "@/lib/prisma"
+import { notFound } from "next/navigation"
 
-export default function BountyDetailPage({ params }: { params: { id: string } }) {
-  // Mock data - in real app this would come from API
-  const bounty = {
-    id: 1,
-    title: "Google Reader",
-    description: "Restore RSS functionality for the millions who relied on this service they used daily",
-    longDescription:
-      "Google Reader was a web-based aggregator that millions of people used daily to stay informed. When Google shut it down in 2013, users lost access to a service they had integrated into their daily routines and workflows. Many had organized their entire information consumption around this tool. This restoration aims to fund the development of a compatible service that restores the functionality that users depended on, ensuring that the time and effort people invested in organizing their feeds wasn't wasted.",
-    company: "Google",
-    raised: 125000,
-    goal: 500000,
-    backers: 2847,
-    timeLeft: "23 days",
-    category: "Productivity",
-    createdAt: "2024-01-15",
-    creator: {
-      name: "Sarah Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      bio: "Former Google engineer passionate about RSS and information management",
+export default async function BountyDetailPage({ params }: { params: { id: string } }) {
+  // Fetch bounty data from database
+  const bounty = await prisma.bounty.findUnique({
+    where: { id: params.id },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          bio: true,
+        },
+      },
+      milestones: {
+        orderBy: { order: 'asc' },
+      },
+      updates: {
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      },
+      contributions: {
+        where: { status: 'COMPLETED' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      },
+      _count: {
+        select: {
+          contributions: {
+            where: { status: 'COMPLETED' },
+          },
+        },
+      },
     },
-    image: "/placeholder.svg?height=400&width=800",
-    updates: [
-      {
-        id: 1,
-        title: "Development Team Assembled",
-        content: "We've successfully assembled a team of experienced developers who worked on similar projects.",
-        date: "2024-01-20",
-        author: "Sarah Chen",
-      },
-      {
-        id: 2,
-        title: "Technical Specifications Released",
-        content: "Detailed technical specifications and roadmap have been published for community review.",
-        date: "2024-01-18",
-        author: "Sarah Chen",
-      },
-    ],
-    milestones: [
-      { amount: 100000, description: "Basic RSS reader functionality", completed: true },
-      { amount: 250000, description: "Advanced features and mobile app", completed: false },
-      { amount: 500000, description: "Full feature parity with original Google Reader", completed: false },
-    ],
+  })
+
+  if (!bounty) {
+    notFound()
   }
 
-  const recentBackers = [
-    { name: "Alex Johnson", amount: 250, avatar: "/placeholder.svg?height=32&width=32" },
-    { name: "Maria Garcia", amount: 100, avatar: "/placeholder.svg?height=32&width=32" },
-    { name: "David Kim", amount: 500, avatar: "/placeholder.svg?height=32&width=32" },
-    { name: "Emma Wilson", amount: 75, avatar: "/placeholder.svg?height=32&width=32" },
-    { name: "James Brown", amount: 200, avatar: "/placeholder.svg?height=32&width=32" },
-  ]
+  // Calculate time left
+  const now = new Date()
+  const deadline = new Date(bounty.fundingDeadline)
+  const diffTime = deadline.getTime() - now.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  let timeLeft = "Expired"
+  if (diffDays > 0) {
+    timeLeft = diffDays === 1 ? "1 day" : `${diffDays} days`
+  }
+
+  // Get recent backers (non-anonymous contributions)
+  const recentBackers = bounty.contributions
+    .filter(contribution => !contribution.anonymous && contribution.user.name)
+    .slice(0, 5)
+    .map(contribution => ({
+      name: contribution.user.name!,
+      amount: contribution.amount,
+      avatar: contribution.user.image || "/placeholder.svg?height=32&width=32",
+    }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
@@ -80,7 +97,7 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
             {/* Hero Image */}
             <div className="aspect-video overflow-hidden rounded-xl">
               <Image
-                src={bounty.image || "/placeholder.svg"}
+                src={bounty.imageUrl || "/placeholder.svg"}
                 alt={bounty.title}
                 width={800}
                 height={400}
@@ -103,17 +120,17 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
               {/* Creator Info */}
               <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
                 <Avatar>
-                  <AvatarImage src={bounty.creator.avatar || "/placeholder.svg"} alt={bounty.creator.name} />
+                  <AvatarImage src={bounty.creator.image || "/placeholder.svg"} alt={bounty.creator.name || 'Creator'} />
                   <AvatarFallback>
                     {bounty.creator.name
-                      .split(" ")
+                      ?.split(" ")
                       .map((n) => n[0])
-                      .join("")}
+                      .join("") || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-slate-900">{bounty.creator.name}</p>
-                  <p className="text-sm text-slate-600">{bounty.creator.bio}</p>
+                  <p className="font-medium text-slate-900">{bounty.creator.name || 'Anonymous'}</p>
+                  <p className="text-sm text-slate-600">{bounty.creator.bio || 'Creator of this restoration bounty'}</p>
                 </div>
               </div>
             </div>
@@ -141,8 +158,8 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
 
                   <h3 className="text-xl font-semibold text-slate-900 mt-8 mb-4">Funding Milestones</h3>
                   <div className="space-y-4">
-                    {bounty.milestones.map((milestone, index) => (
-                      <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
+                    {bounty.milestones.map((milestone) => (
+                      <div key={milestone.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                         <div
                           className={`flex h-8 w-8 items-center justify-center rounded-full ${
                             milestone.completed ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400"
@@ -155,7 +172,7 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-slate-900">${milestone.amount.toLocaleString()}</p>
+                          <p className="font-medium text-slate-900">${milestone.targetAmount.toLocaleString()}</p>
                           <p className="text-sm text-slate-600">{milestone.description}</p>
                         </div>
                       </div>
@@ -166,23 +183,30 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
 
               <TabsContent value="updates" className="mt-6">
                 <div className="space-y-6">
-                  {bounty.updates.map((update) => (
-                    <Card key={update.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{update.title}</CardTitle>
-                          <div className="flex items-center text-sm text-slate-500">
-                            <Calendar className="mr-1 h-4 w-4" />
-                            {new Date(update.date).toLocaleDateString()}
+                  {bounty.updates.length > 0 ? (
+                    bounty.updates.map((update) => (
+                      <Card key={update.id}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{update.title}</CardTitle>
+                            <div className="flex items-center text-sm text-slate-500">
+                              <Calendar className="mr-1 h-4 w-4" />
+                              {new Date(update.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-slate-700">{update.content}</p>
-                        <p className="text-sm text-slate-500 mt-2">By {update.author}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-slate-700">{update.content}</p>
+                          <p className="text-sm text-slate-500 mt-2">By {bounty.creator.name || 'Creator'}</p>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-600">No updates yet</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -222,19 +246,19 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
             {/* Funding Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl text-slate-900">${bounty.raised.toLocaleString()}</CardTitle>
-                <CardDescription>raised of ${bounty.goal.toLocaleString()} goal</CardDescription>
+                <CardTitle className="text-2xl text-slate-900">${bounty.fundingCurrent.toLocaleString()}</CardTitle>
+                <CardDescription>raised of ${bounty.fundingGoal.toLocaleString()} goal</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <Progress value={(bounty.raised / bounty.goal) * 100} className="h-3" />
+                <Progress value={(bounty.fundingCurrent / bounty.fundingGoal) * 100} className="h-3" />
 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">{bounty.backers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-slate-900">{bounty._count.contributions.toLocaleString()}</div>
                     <div className="text-sm text-slate-600">backers</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">{bounty.timeLeft}</div>
+                    <div className="text-2xl font-bold text-slate-900">{timeLeft}</div>
                     <div className="text-sm text-slate-600">to go</div>
                   </div>
                 </div>

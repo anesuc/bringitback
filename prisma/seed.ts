@@ -17,12 +17,12 @@ async function main() {
   // Create sample bounties
   const bounties = [
     {
-      title: "Google Reader",
-      company: "Google",
-      category: "PRODUCTIVITY" as Category,
-      description: "Restore RSS functionality for the millions who relied on this service they used daily",
-      longDescription: "Google Reader was a web-based RSS feed aggregator that was discontinued in 2013. Millions of users relied on it for news aggregation and content discovery. This bounty aims to restore its functionality with modern web technologies while maintaining the simplicity and efficiency that made it beloved.",
-      imageUrl: "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=400&h=300&fit=crop",
+      title: "Zune HD",
+      company: "Microsoft",
+      category: "ENTERTAINMENT" as Category,
+      description: "Restore functionality to the innovative Zune HD media player that people purchased but can no longer fully use",
+      longDescription: "The Zune HD was Microsoft's premium portable media player with an OLED touchscreen, released in 2009. After Microsoft discontinued the Zune service in 2015, many features became inaccessible. This bounty aims to restore streaming capabilities, marketplace access, and social features to make these devices fully functional again for their owners.",
+      imageUrl: "https://images.unsplash.com/photo-1493020258366-be3ead1b3027?w=400&h=300&fit=crop",
       fundingGoal: 500000,
       fundingCurrent: 125000,
       fundingDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now

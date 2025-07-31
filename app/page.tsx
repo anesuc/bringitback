@@ -275,71 +275,83 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="bg-black text-white py-16 relative overflow-hidden">
+        {/* Gradient accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                  <Target className="h-5 w-5 text-white" />
+              <div className="flex items-center space-x-2 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25">
+                  <Target className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-xl font-semibold">ReviveIt</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">ReviveIt</span>
               </div>
-              <p className="text-slate-400 max-w-md">
+              <p className="text-slate-200 max-w-md text-lg leading-relaxed">
                 Crowdfunding platform dedicated to restoring functionality to products and services that people
                 purchased but can no longer use.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Platform</h3>
-              <ul className="space-y-2 text-slate-400">
+              <h3 className="font-bold text-white mb-6 text-lg">Platform</h3>
+              <ul className="space-y-3 text-slate-300">
                 <li>
-                  <Link href="/browse" className="hover:text-white transition-colors">
+                  <Link href="/browse" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Browse Bounties
                   </Link>
                 </li>
                 <li>
-                  <Link href="/create" className="hover:text-white transition-colors">
+                  <Link href="/create" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Create Bounty
                   </Link>
                 </li>
                 <li>
-                  <Link href="/how-it-works" className="hover:text-white transition-colors">
+                  <Link href="/how-it-works" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     How It Works
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-slate-400">
+              <h3 className="font-bold text-white mb-6 text-lg">Support</h3>
+              <ul className="space-y-3 text-slate-300">
                 <li>
-                  <Link href="/help" className="hover:text-white transition-colors">
+                  <Link href="/help" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-white transition-colors">
+                  <Link href="/contact" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="hover:text-white transition-colors">
+                  <Link href="/terms" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Terms
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-white transition-colors">
+                  <Link href="/privacy" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Privacy
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; {new Date().getFullYear()} ReviveIt. All rights reserved.</p>
+          
+          {/* Gradient separator */}
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-8"></div>
+          
+          <div className="text-center">
+            <p className="text-slate-300 text-lg">
+              &copy; {new Date().getFullYear()} <span className="font-semibold text-white">ReviveIt</span>. All rights reserved.
+            </p>
           </div>
         </div>
+        
+        {/* Subtle background decoration */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-24 bg-gradient-to-t from-blue-500/5 to-transparent blur-xl"></div>
       </footer>
     </div>
   )
