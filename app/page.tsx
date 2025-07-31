@@ -111,7 +111,7 @@ export default async function HomePage() {
           </div>
 
           {bountiesWithData.length === 0 ? (
-            <div className="col-span-full text-center py-12">
+            <div className="col-span-full text-center py-12 pt-0">
               <div className="max-w-md mx-auto">
                 <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">No active restorations yet</h3>
