@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import AuthSessionProvider from "@/components/auth/session-provider"
 import { StyledHeader } from "@/components/layout/styled-header"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <AuthSessionProvider>
           <StyledHeader />
           {children}
+          <Toaster position="top-right" />
         </AuthSessionProvider>
       </body>
     </html>

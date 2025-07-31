@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,13 +10,21 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Upload, Target, DollarSign, Calendar, ImageIcon, CheckCircle } from "lucide-react"
+import { ArrowLeft, Upload, Target, DollarSign, Calendar, ImageIcon, CheckCircle, FileText } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function CreateBountyPage() {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCreated, setIsCreated] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false)
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
   const [formData, setFormData] = useState({
     title: "",
@@ -30,7 +38,110 @@ export default function CreateBountyPage() {
     thumbnailUrl: "",
     whatStoppedWorking: "",
   })
+
+  // Custom setter that triggers auto-save
+  const updateFormData = (newData: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...newData }))
+    triggerAutoSave()
+  }
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+
+  // Load draft on component mount
+  useEffect(() => {
+    const draftParam = searchParams.get('draft')
+    if (draftParam && session) {
+      loadDraft(draftParam)
+    }
+  }, [searchParams, session])
+
+  const loadDraft = async (id: string) => {
+    setIsLoadingDraft(true)
+    try {
+      const response = await fetch(`/api/bounties/draft/${id}`)
+      if (!response.ok) {
+        throw new Error('Failed to load draft')
+      }
+      
+      const draft = await response.json()
+      setDraftId(id)
+      setFormData({
+        title: draft.title || "",
+        description: draft.description || "",
+        longDescription: draft.longDescription || "",
+        category: draft.category || "",
+        company: draft.company || "",
+        image: null,
+        imageId: draft.imageId || "",
+        imageUrl: draft.imageUrl || "",
+        thumbnailUrl: draft.imageUrl ? `${draft.imageUrl}/thumbnail` : "",
+        whatStoppedWorking: draft.whatStoppedWorking || "",
+      })
+    } catch (error) {
+      console.error('Error loading draft:', error)
+      toast.error('Failed to load draft')
+    } finally {
+      setIsLoadingDraft(false)
+    }
+  }
+
+  // Auto-save functionality
+  const triggerAutoSave = () => {
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout)
+    }
+
+    // Set new timeout for auto-save (5 seconds after user stops typing)
+    const timeout = setTimeout(() => {
+      if (formData.title.trim() && session) {
+        autoSaveDraft()
+      }
+    }, 5000)
+
+    setAutoSaveTimeout(timeout)
+  }
+
+  const autoSaveDraft = async () => {
+    try {
+      const response = await fetch('/api/bounties/draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: draftId,
+          title: formData.title,
+          company: formData.company,
+          category: formData.category || null,
+          description: formData.description,
+          longDescription: formData.longDescription,
+          whatStoppedWorking: formData.whatStoppedWorking,
+          imageUrl: formData.imageUrl,
+          imageId: formData.imageId,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (!draftId) {
+          setDraftId(result.draftId)
+        }
+        setLastSaved(new Date())
+      }
+    } catch (error) {
+      // Silent fail for auto-save
+      console.error('Auto-save failed:', error)
+    }
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout)
+      }
+    }
+  }, [autoSaveTimeout])
 
   const categories = [
     { value: "MEDIA_PLAYERS", label: "Media Players" },
@@ -86,7 +197,7 @@ export default function CreateBountyPage() {
       })
     } catch (error) {
       console.error('Image upload error:', error)
-      alert('Failed to upload image. Please try again.')
+      toast.error('Failed to upload image. Please try again.')
     } finally {
       setIsUploadingImage(false)
     }
@@ -99,7 +210,7 @@ export default function CreateBountyPage() {
     }
 
     if (!formData.title || !formData.company || !formData.category || !formData.description || !formData.longDescription || !formData.whatStoppedWorking) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -129,12 +240,65 @@ export default function CreateBountyPage() {
       }
 
       const bounty = await response.json()
-      router.push(`/bounty/${bounty.id}`)
+      setIsCreated(true)
+      
+      // Show success state for 2 seconds before redirecting
+      setTimeout(() => {
+        router.push(`/bounty/${bounty.id}`)
+      }, 2000)
     } catch (error) {
       console.error('Error creating bounty:', error)
-      alert('Failed to create bounty. Please try again.')
+      toast.error('Failed to create bounty. Please try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleSaveDraft = async () => {
+    if (!session) {
+      router.push('/auth/signin')
+      return
+    }
+
+    // Basic validation - at least title is required for draft
+    if (!formData.title.trim()) {
+      toast.error('Please enter a title before saving draft')
+      return
+    }
+
+    setIsSavingDraft(true)
+    
+    try {
+      const response = await fetch('/api/bounties/draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: draftId, // Include draft ID if editing existing draft
+          title: formData.title,
+          company: formData.company,
+          category: formData.category || null,
+          description: formData.description,
+          longDescription: formData.longDescription,
+          whatStoppedWorking: formData.whatStoppedWorking,
+          imageUrl: formData.imageUrl,
+          imageId: formData.imageId,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save draft')
+      }
+
+      // Show success feedback
+      toast.success('Draft saved successfully! You can continue editing later from your dashboard.')
+    } catch (error) {
+      console.error('Error saving draft:', error)
+      toast.error('Failed to save draft. Please try again.')
+    } finally {
+      setIsSavingDraft(false)
     }
   }
 
@@ -153,6 +317,19 @@ export default function CreateBountyPage() {
     )
   }
 
+  // Show loading state when loading draft
+  if (isLoadingDraft) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold mb-2">Loading Draft</h1>
+          <p className="text-slate-600">Please wait while we load your draft...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -165,6 +342,25 @@ export default function CreateBountyPage() {
         </Button>
 
         <div className="max-w-4xl mx-auto">
+          {/* Draft indicator */}
+          {draftId && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-orange-600" />
+                  <span className="text-orange-800 font-medium">Editing Draft</span>
+                  <span className="text-orange-600">You're continuing a saved draft</span>
+                </div>
+                {lastSaved && (
+                  <div className="flex items-center gap-2 text-sm text-orange-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Auto-saved {lastSaved.toLocaleTimeString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Progress Steps */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -213,7 +409,7 @@ export default function CreateBountyPage() {
                       id="title"
                       placeholder="e.g., Zune HD, Nintendo DSi Shop, Guitar Hero Live"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) => updateFormData({ title: e.target.value })}
                     />
                   </div>
 
@@ -223,7 +419,7 @@ export default function CreateBountyPage() {
                       id="company"
                       placeholder="e.g., Microsoft, Nintendo, Activision"
                       value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      onChange={(e) => updateFormData({ company: e.target.value })}
                     />
                   </div>
 
@@ -231,7 +427,7 @@ export default function CreateBountyPage() {
                     <Label htmlFor="category">Category *</Label>
                     <Select
                       value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      onValueChange={(value) => updateFormData({ category: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
@@ -252,7 +448,7 @@ export default function CreateBountyPage() {
                       id="description"
                       placeholder="e.g., Game console that can't download games since shop servers were shut down"
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) => updateFormData({ description: e.target.value })}
                       maxLength={200}
                     />
                     <p className="text-sm text-slate-500">{formData.description.length}/200 characters</p>
@@ -268,7 +464,7 @@ export default function CreateBountyPage() {
                       id="longDescription"
                       placeholder="Describe how you and others used this device/software, what specific features became inaccessible when the company shut down servers, and why restoring functionality would benefit people who still own it..."
                       value={formData.longDescription}
-                      onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
+                      onChange={(e) => updateFormData({ longDescription: e.target.value })}
                       rows={8}
                     />
                   </div>
@@ -326,7 +522,7 @@ export default function CreateBountyPage() {
                       id="whatStoppedWorking"
                       placeholder="e.g., Music marketplace, wireless sync, social features, podcast subscriptions, online multiplayer..."
                       value={formData.whatStoppedWorking}
-                      onChange={(e) => setFormData({ ...formData, whatStoppedWorking: e.target.value })}
+                      onChange={(e) => updateFormData({ whatStoppedWorking: e.target.value })}
                       rows={4}
                     />
                     <p className="text-sm text-slate-500">List the specific features that became unusable when servers were shut down</p>
@@ -403,25 +599,50 @@ export default function CreateBountyPage() {
           </Card>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={handlePrevious} disabled={step === 1}>
-              Previous
-            </Button>
-            <div className="space-x-4">
-              <Button variant="ghost">Save Draft</Button>
-              {step < 3 ? (
-                <Button onClick={handleNext}>Next</Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+          {!isCreated ? (
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={handlePrevious} disabled={step === 1 || isSubmitting}>
+                Previous
+              </Button>
+              <div className="space-x-4">
+                <Button 
+                  variant="ghost" 
+                  disabled={isSubmitting || isSavingDraft}
+                  onClick={handleSaveDraft}
                 >
-                  {isSubmitting ? "Creating..." : "Submit Restoration Campaign"}
+                  {isSavingDraft ? "Saving..." : "Save Draft"}
                 </Button>
-              )}
+                {step < 3 ? (
+                  <Button onClick={handleNext} disabled={isSubmitting}>Next</Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  >
+                    {isSubmitting ? "Creating..." : "Submit Restoration Campaign"}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-green-800 mb-2">
+                  Campaign Created Successfully!
+                </h3>
+                <p className="text-green-600">
+                  Redirecting you to your new restoration campaign...
+                </p>
+              </div>
+              <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>

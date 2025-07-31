@@ -28,9 +28,11 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  Send
+  Send,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 interface Solution {
   id: string
@@ -71,6 +73,7 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const [votingOnSolution, setVotingOnSolution] = useState<string | null>(null)
   const [newSolution, setNewSolution] = useState({
     title: "",
     description: "",
@@ -97,12 +100,12 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
 
   const submitSolution = async () => {
     if (!session) {
-      alert('Please sign in to submit a solution')
+      toast.error('Please sign in to submit a solution')
       return
     }
 
     if (!newSolution.title || !newSolution.description || !newSolution.implementation) {
-      alert('Please fill in all fields')
+      toast.error('Please fill in all fields')
       return
     }
 
@@ -121,13 +124,14 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
         setSolutions(prev => [newSolutionData, ...prev])
         setNewSolution({ title: "", description: "", implementation: "" })
         setShowSubmitDialog(false)
+        toast.success('Solution submitted successfully!')
       } else {
         const errorData = await response.json()
-        alert(errorData.error || 'Failed to submit solution')
+        toast.error(errorData.error || 'Failed to submit solution')
       }
     } catch (error) {
       console.error('Failed to submit solution:', error)
-      alert('Failed to submit solution')
+      toast.error('Failed to submit solution')
     } finally {
       setSubmitting(false)
     }
@@ -135,10 +139,12 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
 
   const vote = async (solutionId: string, voteType: "APPROVE" | "REJECT") => {
     if (!session) {
-      alert('Please sign in to vote')
+      toast.error('Please sign in to vote')
       return
     }
 
+    setVotingOnSolution(solutionId)
+    
     try {
       const response = await fetch(`/api/solutions/${solutionId}/vote`, {
         method: 'POST',
@@ -154,15 +160,19 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
         fetchSolutions()
         
         if (data.approvalPercentage >= 50) {
-          alert('🎉 Solution accepted! This bounty has been completed.')
+          toast.success('🎉 Solution accepted! This bounty has been completed.')
+        } else {
+          toast.success(`Vote recorded! ${voteType === 'APPROVE' ? '👍' : '👎'}`)
         }
       } else {
         const errorData = await response.json()
-        alert(errorData.error || 'Failed to vote')
+        toast.error(errorData.error || 'Failed to vote')
       }
     } catch (error) {
       console.error('Failed to vote:', error)
-      alert('Failed to vote')
+      toast.error('Failed to vote')
+    } finally {
+      setVotingOnSolution(null)
     }
   }
 
@@ -244,7 +254,7 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
                   <Input
                     id="implementation"
                     type="url"
-                    placeholder="https://github.com/yourusername/zune-revival"
+                    placeholder="https://github.com/yourusername/solution"
                     value={newSolution.implementation}
                     onChange={(e) => setNewSolution(prev => ({ ...prev, implementation: e.target.value }))}
                   />
@@ -342,8 +352,13 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
                             variant={userVote === "APPROVE" ? "default" : "outline"}
                             onClick={() => vote(solution.id, "APPROVE")}
                             className="flex items-center gap-2"
+                            disabled={votingOnSolution === solution.id}
                           >
-                            <ThumbsUp className="h-4 w-4" />
+                            {votingOnSolution === solution.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ThumbsUp className="h-4 w-4" />
+                            )}
                             Approve
                           </Button>
                           <Button
@@ -351,8 +366,13 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
                             variant={userVote === "REJECT" ? "destructive" : "outline"}
                             onClick={() => vote(solution.id, "REJECT")}
                             className="flex items-center gap-2"
+                            disabled={votingOnSolution === solution.id}
                           >
-                            <ThumbsDown className="h-4 w-4" />
+                            {votingOnSolution === solution.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ThumbsDown className="h-4 w-4" />
+                            )}
                             Reject
                           </Button>
                         </div>

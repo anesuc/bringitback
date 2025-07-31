@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { DollarSign, TrendingUp, Users, Bookmark, Plus } from "lucide-react"
+import { DollarSign, TrendingUp, Users, Bookmark, Plus, FileText, Edit } from "lucide-react"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -16,9 +16,9 @@ export default async function DashboardPage() {
   }
 
   // Get user stats
-  const [totalRaised, totalContributed, activeBounties, savedBounties] = await Promise.all([
+  const [totalRaised, totalContributed, activeBounties, savedBounties, draftBounties] = await Promise.all([
     prisma.bounty.aggregate({
-      where: { creatorId: user.id },
+      where: { creatorId: user.id, status: { not: "DRAFT" } },
       _sum: { fundingCurrent: true },
     }),
     prisma.contribution.aggregate({
@@ -31,11 +31,17 @@ export default async function DashboardPage() {
     prisma.savedBounty.count({
       where: { userId: user.id },
     }),
+    prisma.bounty.count({
+      where: { creatorId: user.id, status: "DRAFT" },
+    }),
   ])
 
-  // Get recent bounties
+  // Get recent bounties (excluding drafts)
   const recentBounties = await prisma.bounty.findMany({
-    where: { creatorId: user.id },
+    where: { 
+      creatorId: user.id,
+      status: { not: "DRAFT" }
+    },
     orderBy: { createdAt: "desc" },
     take: 5,
     include: {
@@ -45,6 +51,24 @@ export default async function DashboardPage() {
           comments: true,
         },
       },
+    },
+  })
+
+  // Get draft bounties
+  const drafts = await prisma.bounty.findMany({
+    where: { 
+      creatorId: user.id,
+      status: "DRAFT"
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      description: true,
+      company: true,
+      updatedAt: true,
     },
   })
 
@@ -101,7 +125,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Raised</CardTitle>
@@ -154,12 +178,25 @@ export default async function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Draft Bounties</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{draftBounties}</div>
+            <p className="text-xs text-muted-foreground">
+              Waiting to publish
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="bounties" className="space-y-4">
         <TabsList>
           <TabsTrigger value="bounties">My Bounties</TabsTrigger>
+          <TabsTrigger value="drafts">Drafts</TabsTrigger>
           <TabsTrigger value="contributions">My Contributions</TabsTrigger>
           <TabsTrigger value="saved">Saved Bounties</TabsTrigger>
         </TabsList>
@@ -230,6 +267,82 @@ export default async function DashboardPage() {
             <div className="text-center">
               <Button variant="outline" asChild>
                 <Link href="/dashboard/bounties">View All Bounties</Link>
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="drafts" className="space-y-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Draft Bounties</h2>
+            <Button asChild>
+              <Link href="/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Bounty
+              </Link>
+            </Button>
+          </div>
+          
+          {drafts.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <FileText className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  You don&apos;t have any draft bounties yet.
+                </p>
+                <Button asChild>
+                  <Link href="/create">Create Your First Bounty</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {drafts.map((draft) => (
+                <Card key={draft.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <CardTitle className="text-lg">
+                            {draft.title || "Untitled Draft"}
+                          </CardTitle>
+                          <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                            <FileText className="mr-1 h-3 w-3" />
+                            Draft
+                          </Badge>
+                        </div>
+                        <CardDescription>
+                          {draft.company && `${draft.company} • `}
+                          {draft.category && draft.category.replace('_', ' ')}
+                        </CardDescription>
+                        {draft.description && (
+                          <p className="text-sm text-slate-600 mt-2 line-clamp-2">
+                            {draft.description}
+                          </p>
+                        )}
+                      </div>
+                      <Button asChild size="sm" className="ml-4">
+                        <Link href={`/create?draft=${draft.id}`}>
+                          <Edit className="mr-1 h-3 w-3" />
+                          Continue Editing
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-xs text-slate-500">
+                      Last updated: {new Date(draft.updatedAt).toLocaleDateString()}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          
+          {drafts.length > 0 && (
+            <div className="text-center">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/drafts">View All Drafts</Link>
               </Button>
             </div>
           )}
