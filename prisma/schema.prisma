@@ -1,0 +1,263 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  email           String          @unique
+  emailVerified   DateTime?
+  name            String?
+  image           String?
+  hashedPassword  String?
+  bio             String?
+  website         String?
+  location        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  accounts        Account[]
+  sessions        Session[]
+  bounties        Bounty[]        @relation("BountyCreator")
+  contributions   Contribution[]
+  comments        Comment[]
+  savedBounties   SavedBounty[]
+  notifications   Notification[]
+  
+  stripeCustomerId     String?    @unique
+  stripeConnectId      String?    @unique
+  stripeConnectOnboarded Boolean  @default(false)
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Bounty {
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  company          String
+  category         Category
+  description      String
+  longDescription  String
+  imageUrl         String?
+  fundingGoal      Float
+  fundingCurrent   Float           @default(0)
+  fundingDeadline  DateTime
+  status           BountyStatus    @default(ACTIVE)
+  featured         Boolean         @default(false)
+  trending         Boolean         @default(false)
+  
+  creatorId        String          @db.ObjectId
+  creator          User            @relation("BountyCreator", fields: [creatorId], references: [id])
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  milestones       Milestone[]
+  contributions    Contribution[]
+  updates          Update[]
+  comments         Comment[]
+  savedBy          SavedBounty[]
+  
+  // Stripe related
+  stripeProductId  String?         @unique
+  stripePriceId    String?         @unique
+  
+  // Stats
+  viewCount        Int             @default(0)
+  shareCount       Int             @default(0)
+  
+  // Settings
+  allowComments    Boolean         @default(true)
+  isPublic         Boolean         @default(true)
+}
+
+model Milestone {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  bountyId    String    @db.ObjectId
+  bounty      Bounty    @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  targetAmount Float
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Contribution {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  bountyId          String             @db.ObjectId
+  bounty            Bounty             @relation(fields: [bountyId], references: [id])
+  userId            String             @db.ObjectId
+  user              User               @relation(fields: [userId], references: [id])
+  amount            Float
+  message           String?
+  anonymous         Boolean            @default(false)
+  status            ContributionStatus @default(PENDING)
+  
+  // Stripe related
+  stripePaymentIntentId  String?       @unique
+  stripeCheckoutSessionId String?       @unique
+  stripeChargeId         String?        @unique
+  
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  
+  refunds           Refund[]
+}
+
+model Refund {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  contributionId  String           @db.ObjectId
+  contribution    Contribution     @relation(fields: [contributionId], references: [id])
+  amount          Float
+  reason          String?
+  status          RefundStatus     @default(PENDING)
+  stripeRefundId  String?          @unique
+  processedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Update {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  bountyId    String    @db.ObjectId
+  bounty      Bounty    @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Comment {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  bountyId  String    @db.ObjectId
+  bounty    Bounty    @relation(fields: [bountyId], references: [id], onDelete: Cascade)
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
+  content   String
+  parentId  String?   @db.ObjectId
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model SavedBounty {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
+  bountyId  String    @db.ObjectId
+  bounty    Bounty    @relation(fields: [bountyId], references: [id])
+  createdAt DateTime  @default(now())
+  
+  @@unique([userId, bountyId])
+}
+
+model Notification {
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String             @db.ObjectId
+  user      User               @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  read      Boolean            @default(false)
+  createdAt DateTime           @default(now())
+}
+
+// Enums
+enum Category {
+  PRODUCTIVITY
+  SOCIAL_MEDIA
+  MOBILE_OS
+  COMMUNICATION
+  DEVELOPMENT
+  GAMING
+  IOT_DEVICES
+  SMART_HOME
+  WEARABLES
+  ENTERTAINMENT
+  EDUCATION
+  HEALTH_FITNESS
+  OTHER
+}
+
+enum BountyStatus {
+  DRAFT
+  ACTIVE
+  FUNDED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum ContributionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  CONTRIBUTION_RECEIVED
+  BOUNTY_FUNDED
+  BOUNTY_UPDATE
+  MILESTONE_REACHED
+  COMMENT_REPLY
+  BOUNTY_EXPIRED
+  REFUND_PROCESSED
+}

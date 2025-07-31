@@ -73,7 +73,7 @@ export default function BountyDetailPage({ params }: { params: { id: string } })
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-semibold text-slate-900">BringItBack</span>
+              <span className="text-xl font-semibold text-slate-900">ReviveIt</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm">

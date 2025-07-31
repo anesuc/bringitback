@@ -56,7 +56,7 @@ export default function HomePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-semibold text-slate-900">BringItBack</span>
+              <span className="text-xl font-semibold text-slate-900">ReviveIt</span>
             </div>
             <nav className="hidden md:flex items-center space-x-8">
               <Link href="/browse" className="text-slate-600 hover:text-slate-900 transition-colors">
@@ -321,7 +321,7 @@ export default function HomePage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                   <Target className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-semibold">BringItBack</span>
+                <span className="text-xl font-semibold">ReviveIt</span>
               </div>
               <p className="text-slate-400 max-w-md">
                 Crowdfunding platform dedicated to restoring functionality to products and services that people
@@ -375,7 +375,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; {new Date().getFullYear()} BringItBack. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} ReviveIt. All rights reserved.</p>
           </div>
         </div>
       </footer>

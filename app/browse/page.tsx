@@ -20,7 +20,7 @@ export default function BrowsePage() {
     {
       id: 1,
       title: "Google Reader",
-      description: "Bring back the beloved RSS reader that millions relied on for news aggregation",
+      description: "Revive the beloved RSS reader that millions relied on for news aggregation",
       company: "Google",
       raised: 125000,
       goal: 500000,
@@ -72,7 +72,7 @@ export default function BrowsePage() {
     {
       id: 5,
       title: "Adobe Flash Player",
-      description: "Bring back Flash support for legacy games and animations",
+      description: "Revive Flash support for legacy games and animations",
       company: "Adobe",
       raised: 156000,
       goal: 750000,
@@ -126,7 +126,7 @@ export default function BrowsePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-semibold text-slate-900">BringItBack</span>
+              <span className="text-xl font-semibold text-slate-900">ReviveIt</span>
             </Link>
             <nav className="hidden md:flex items-center space-x-8">
               <Link href="/browse" className="text-blue-600 font-medium">
