@@ -7,6 +7,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 
+// Helper function to format category names
+function formatCategory(category: string): string {
+  return category
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export default async function HomePage() {
   // Get featured bounties from database
   const featuredBounties = await prisma.bounty.findMany({
@@ -50,7 +58,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-24">
+      <section className="relative overflow-hidden pt-16 pb-8 sm:pt-24 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
@@ -68,12 +76,17 @@ export default async function HomePage() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8"
+                asChild
               >
-                Restore Your Products
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Link href="/browse">
+                  Restore Your Products
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
-              <Button variant="outline" size="lg" className="px-8 bg-transparent">
-                Start a Restoration
+              <Button variant="outline" size="lg" className="px-8 bg-transparent" asChild>
+                <Link href="/create">
+                  Start a Restoration
+                </Link>
               </Button>
             </div>
           </div>
@@ -131,7 +144,7 @@ export default async function HomePage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between mb-2">
                     <Badge variant="secondary" className="text-xs">
-                      {bounty.category}
+                      {formatCategory(bounty.category)}
                     </Badge>
                     <div className="text-xs text-slate-500">
                       Flexible funding
@@ -240,15 +253,20 @@ export default async function HomePage() {
               Join thousands of others who refuse to accept that products they purchased should become useless.
             </p>
             <div className="mt-8 flex items-center justify-center gap-x-6">
-              <Button size="lg" variant="secondary" className="px-8">
-                Start a Restoration
+              <Button size="lg" variant="secondary" className="px-8" asChild>
+                <Link href="/create">
+                  Start a Restoration
+                </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="px-8 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent"
+                asChild
               >
-                Find Your Product
+                <Link href="/browse">
+                  Find Your Product
+                </Link>
               </Button>
             </div>
           </div>
@@ -276,7 +294,7 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="font-bold text-white mb-6 text-lg">Platform</h3>
-              <ul className="space-y-3 text-slate-300">
+              <ul className="space-y-3 text-white/75">
                 <li>
                   <Link href="/browse" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Browse Bounties
@@ -296,7 +314,7 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="font-bold text-white mb-6 text-lg">Support</h3>
-              <ul className="space-y-3 text-slate-300">
+              <ul className="space-y-3 text-white/75">
                 <li>
                   <Link href="/help" className="hover:text-white hover:translate-x-1 transition-all duration-200 inline-block">
                     Help Center
@@ -325,7 +343,7 @@ export default async function HomePage() {
           <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-8"></div>
           
           <div className="text-center">
-            <p className="text-slate-300 text-lg">
+            <p className="text-white/75 text-lg">
               &copy; {new Date().getFullYear()} <span className="font-semibold text-white">ReviveIt</span>. All rights reserved.
             </p>
           </div>

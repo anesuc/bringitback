@@ -17,6 +17,14 @@ import UpdatesSection from "./updates-section"
 import ContributeButton from "./contribute-button"
 import { getCurrentUser } from "@/lib/session"
 
+// Helper function to format category names
+function formatCategory(category: string): string {
+  return category
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export default async function BountyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const currentUser = await getCurrentUser()
@@ -107,6 +115,11 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
       avatar: contribution.user.image || "/placeholder.svg?height=32&width=32",
     }))
 
+  // Count contributions from users other than the creator (for verification badge)
+  const contributionsFromOthers = bounty.contributions.filter(
+    contribution => contribution.user.id !== bounty.creator.id
+  ).length
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -135,11 +148,13 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
             {/* Title and Description */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <Badge variant="secondary">{bounty.category}</Badge>
-                <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  Verified
-                </Badge>
+                <Badge variant="secondary">{formatCategory(bounty.category)}</Badge>
+                {contributionsFromOthers > 0 && (
+                  <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                )}
               </div>
               <h1 className="text-3xl font-bold text-slate-900 mb-4">{bounty.title}</h1>
               <p className="text-lg text-slate-600 mb-6">{bounty.description}</p>

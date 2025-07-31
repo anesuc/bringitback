@@ -7,6 +7,14 @@ import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import BrowseFilters from "./browse-filters"
 
+// Helper function to format category names
+function formatCategory(category: string): string {
+  return category
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 // Trending algorithm: calculates trending score based on recent activity
 function calculateTrendingScore(bounty: any): number {
   const now = new Date()
@@ -132,6 +140,12 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     distinct: ["category"],
   })
   const categories = ["all", ...allCategories.map(b => b.category).filter(Boolean)]
+  
+  // Format categories for display
+  const formattedCategories = categories.map(cat => ({
+    value: cat,
+    label: cat === "all" ? "All Categories" : formatCategory(cat)
+  }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
@@ -146,7 +160,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* Filters */}
         <BrowseFilters 
-          categories={categories}
+          categories={formattedCategories}
           currentSearch={search}
           currentCategory={category}
           currentSort={sortBy}
@@ -190,7 +204,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between mb-2">
                   <Badge variant="secondary" className="text-xs">
-                    {bounty.category}
+                    {formatCategory(bounty.category)}
                   </Badge>
                   <div className="text-xs text-slate-500">
                     Flexible funding

@@ -23,7 +23,8 @@ const createBountySchema = z.object({
   description: z.string().min(1).max(500),
   longDescription: z.string().min(1),
   whatStoppedWorking: z.string().min(1),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
+  imageId: z.string().optional(),
 })
 
 // GET /api/bounties - Get all bounties with filtering
@@ -139,6 +140,7 @@ export async function POST(request: Request) {
         description: validatedData.description,
         longDescription: validatedData.longDescription + (validatedData.whatStoppedWorking ? `\n\nFeatures that stopped working:\n${validatedData.whatStoppedWorking}` : ''),
         imageUrl: validatedData.imageUrl,
+        imageId: validatedData.imageId,
         creatorId: user.id,
         // Flexible funding defaults
         fundingGoal: 999999999, // Very high default since it's flexible

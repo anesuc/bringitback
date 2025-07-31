@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, TrendingUp } from "lucide-react"
 
 interface BrowseFiltersProps {
-  categories: string[]
+  categories: { value: string; label: string }[]
   currentSearch: string
   currentCategory: string
   currentSort: string
@@ -59,7 +59,7 @@ export default function BrowseFilters({
       <div className="relative flex-1 max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
         <Input
-          placeholder="Search for products that stopped working..."
+          placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -73,8 +73,8 @@ export default function BrowseFilters({
         </SelectTrigger>
         <SelectContent>
           {categories.map((category) => (
-            <SelectItem key={category} value={category}>
-              {category === "all" ? "All Categories" : category}
+            <SelectItem key={category.value} value={category.value}>
+              {category.label}
             </SelectItem>
           ))}
         </SelectContent>

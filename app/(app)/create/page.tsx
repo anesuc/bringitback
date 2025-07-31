@@ -25,8 +25,12 @@ export default function CreateBountyPage() {
     category: "",
     company: "",
     image: null,
+    imageId: "",
+    imageUrl: "",
+    thumbnailUrl: "",
     whatStoppedWorking: "",
   })
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const categories = [
     { value: "MEDIA_PLAYERS", label: "Media Players" },
@@ -51,10 +55,40 @@ export default function CreateBountyPage() {
     if (step > 1) setStep(step - 1)
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      setFormData({ ...formData, image: file })
+    if (!file) return
+
+    setIsUploadingImage(true)
+    
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append('image', file)
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: uploadFormData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to upload image')
+      }
+
+      const { imageId, imageUrl, thumbnailUrl } = await response.json()
+      
+      setFormData({ 
+        ...formData, 
+        image: file, 
+        imageId,
+        imageUrl, 
+        thumbnailUrl 
+      })
+    } catch (error) {
+      console.error('Image upload error:', error)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setIsUploadingImage(false)
     }
   }
 
@@ -84,7 +118,8 @@ export default function CreateBountyPage() {
           description: formData.description,
           longDescription: formData.longDescription,
           whatStoppedWorking: formData.whatStoppedWorking,
-          imageUrl: formData.image ? undefined : undefined, // TODO: Handle image upload
+          imageUrl: formData.imageUrl,
+          imageId: formData.imageId,
         }),
       })
 
@@ -243,11 +278,24 @@ export default function CreateBountyPage() {
                     <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-slate-400 transition-colors">
                       <ImageIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                       <p className="text-slate-600 mb-2">Upload an image for your bounty</p>
-                      <p className="text-sm text-slate-500">PNG, JPG up to 10MB</p>
-                      {formData.image && (
-                        <p className="text-sm text-green-600 mt-2">
-                          Selected: {(formData.image as File).name}
+                      <p className="text-sm text-slate-500">Recommended: 1200x675px (16:9 ratio)</p>
+                      <p className="text-sm text-slate-400">PNG, JPG up to 10MB</p>
+                      {isUploadingImage && (
+                        <p className="text-sm text-blue-600 mt-2">
+                          Uploading and optimizing image...
                         </p>
+                      )}
+                      {formData.imageUrl && !isUploadingImage && (
+                        <div className="mt-4">
+                          <p className="text-sm text-green-600 mb-2">
+                            ✓ Image uploaded successfully!
+                          </p>
+                          <img 
+                            src={formData.imageUrl} 
+                            alt="Preview" 
+                            className="max-w-xs mx-auto rounded-lg border"
+                          />
+                        </div>
                       )}
                       <div className="mt-4">
                         <input
@@ -257,10 +305,15 @@ export default function CreateBountyPage() {
                           className="hidden"
                           id="image-upload"
                         />
-                        <Button variant="outline" className="bg-transparent" asChild>
+                        <Button 
+                          variant="outline" 
+                          className="bg-transparent" 
+                          asChild
+                          disabled={isUploadingImage}
+                        >
                           <label htmlFor="image-upload" className="cursor-pointer">
                             <Upload className="mr-2 h-4 w-4" />
-                            Choose File
+                            {isUploadingImage ? 'Uploading...' : formData.imageUrl ? 'Replace Image' : 'Choose File'}
                           </label>
                         </Button>
                       </div>
@@ -293,7 +346,11 @@ export default function CreateBountyPage() {
                       <div>
                         <Label className="text-sm font-medium text-slate-600">Category</Label>
                         <div className="mt-1">
-                          {formData.category && <Badge variant="secondary">{formData.category}</Badge>}
+                          {formData.category && (
+                            <Badge variant="secondary">
+                              {categories.find(cat => cat.value === formData.category)?.label || formData.category}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -301,9 +358,33 @@ export default function CreateBountyPage() {
                         <p className="text-slate-900">{formData.company || "Not specified"}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-slate-600">Description</Label>
+                        <Label className="text-sm font-medium text-slate-600">What Stopped Working</Label>
                         <p className="text-slate-900">{formData.description || "Not specified"}</p>
                       </div>
+                      <div>
+                        <Label className="text-sm font-medium text-slate-600">Why This Needs to Work Again</Label>
+                        <p className="text-slate-900 text-sm max-h-32 overflow-y-auto">
+                          {formData.longDescription || "Not specified"}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-slate-600">What Features Stopped Working</Label>
+                        <p className="text-slate-900 text-sm">
+                          {formData.whatStoppedWorking || "Not specified"}
+                        </p>
+                      </div>
+                      {formData.imageUrl && (
+                        <div>
+                          <Label className="text-sm font-medium text-slate-600">Project Image</Label>
+                          <div className="mt-2">
+                            <img 
+                              src={formData.imageUrl} 
+                              alt="Project preview" 
+                              className="max-w-sm rounded-lg border"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
