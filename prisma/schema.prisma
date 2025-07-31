@@ -146,9 +146,9 @@ model Contribution {
   status            ContributionStatus @default(PENDING)
   
   // Stripe related
-  stripePaymentIntentId  String?       @unique
+  stripePaymentIntentId  String?
   stripeCheckoutSessionId String?       @unique
-  stripeChargeId         String?        @unique
+  stripeChargeId         String?
   
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

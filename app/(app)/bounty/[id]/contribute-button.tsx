@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { DollarSign, Heart } from "lucide-react"
+import { DollarSign, Heart, HeartHandshake } from "lucide-react"
 import ContributeModal from "./contribute-modal"
 
 interface ContributeButtonProps {
@@ -10,19 +11,54 @@ interface ContributeButtonProps {
   bountyTitle: string
   variant?: "primary" | "secondary" | "empty-state"
   className?: string
+  isSaved?: boolean
 }
 
 export default function ContributeButton({ 
   bountyId, 
   bountyTitle, 
   variant = "primary",
-  className 
+  className,
+  isSaved = false
 }: ContributeButtonProps) {
+  const { data: session } = useSession()
   const [showModal, setShowModal] = useState(false)
+  const [saved, setSaved] = useState(isSaved)
+  const [savingState, setSavingState] = useState(false)
 
   const handleContributeSuccess = () => {
     // Refresh the page to show updated contribution data
     window.location.reload()
+  }
+
+  const handleSaveToggle = async () => {
+    if (!session) {
+      alert('Please sign in to save bounties')
+      return
+    }
+
+    setSavingState(true)
+    try {
+      const method = saved ? 'DELETE' : 'POST'
+      const response = await fetch(`/api/bounties/${bountyId}/save`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        setSaved(!saved)
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || `Failed to ${saved ? 'unsave' : 'save'} bounty`)
+      }
+    } catch (error) {
+      console.error('Failed to toggle save:', error)
+      alert(`Failed to ${saved ? 'unsave' : 'save'} bounty`)
+    } finally {
+      setSavingState(false)
+    }
   }
 
   if (variant === "primary") {
@@ -52,14 +88,19 @@ export default function ContributeButton({
       <Button 
         variant="outline" 
         size="lg" 
-        className={`w-full bg-transparent ${className || ""}`}
-        onClick={() => {
-          // TODO: Implement save for later functionality
-          alert('Save for later functionality coming soon!')
-        }}
+        className={`w-full bg-transparent ${className || ""} ${saved ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100' : ''}`}
+        onClick={handleSaveToggle}
+        disabled={savingState}
       >
-        <Heart className="mr-2 h-4 w-4" />
-        Save for Later
+        {saved ? (
+          <HeartHandshake className="mr-2 h-4 w-4 fill-current" />
+        ) : (
+          <Heart className="mr-2 h-4 w-4" />
+        )}
+        {savingState 
+          ? (saved ? 'Removing...' : 'Saving...') 
+          : (saved ? 'Saved' : 'Save for Later')
+        }
       </Button>
     )
   }

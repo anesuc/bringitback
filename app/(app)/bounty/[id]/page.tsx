@@ -76,6 +76,16 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
     },
   }) : null
 
+  // Check if current user has saved this bounty
+  const isSaved = currentUser ? await prisma.savedBounty.findUnique({
+    where: {
+      userId_bountyId: {
+        userId: currentUser.id,
+        bountyId: id,
+      },
+    },
+  }) : null
+
   // Calculate time left
   const now = new Date()
   const deadline = new Date(bounty.fundingDeadline)
@@ -262,6 +272,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
                     bountyId={id}
                     bountyTitle={bounty.title}
                     variant="secondary"
+                    isSaved={!!isSaved}
                   />
                 </div>
 

@@ -5,9 +5,10 @@ import { getCurrentUser } from "@/lib/session"
 // POST /api/bounties/[id]/save - Save a bounty
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json(
@@ -17,7 +18,7 @@ export async function POST(
     }
 
     const bounty = await prisma.bounty.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!bounty) {
@@ -31,7 +32,7 @@ export async function POST(
       where: {
         userId_bountyId: {
           userId: user.id,
-          bountyId: params.id,
+          bountyId: id,
         },
       },
     })
@@ -46,7 +47,7 @@ export async function POST(
     const savedBounty = await prisma.savedBounty.create({
       data: {
         userId: user.id,
-        bountyId: params.id,
+        bountyId: id,
       },
     })
 
@@ -63,9 +64,10 @@ export async function POST(
 // DELETE /api/bounties/[id]/save - Unsave a bounty
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json(
@@ -78,7 +80,7 @@ export async function DELETE(
       where: {
         userId_bountyId: {
           userId: user.id,
-          bountyId: params.id,
+          bountyId: id,
         },
       },
     })

@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { DollarSign, TrendingUp, Users, Bookmark, Plus } from "lucide-react"
 
@@ -61,6 +60,32 @@ export default async function DashboardPage() {
           title: true,
           company: true,
           imageUrl: true,
+        },
+      },
+    },
+  })
+
+  // Get saved bounties
+  const savedBountiesList = await prisma.savedBounty.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    include: {
+      bounty: {
+        select: {
+          id: true,
+          title: true,
+          company: true,
+          imageUrl: true,
+          status: true,
+          fundingCurrent: true,
+          createdAt: true,
+          _count: {
+            select: {
+              contributions: true,
+              comments: true,
+            },
+          },
         },
       },
     },
@@ -182,16 +207,12 @@ export default async function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <Progress 
-                        value={(bounty.fundingCurrent / bounty.fundingGoal) * 100} 
-                        className="h-2"
-                      />
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-green-600">
                           ${bounty.fundingCurrent.toLocaleString()} raised
                         </span>
-                        <span className="text-muted-foreground">
-                          ${bounty.fundingGoal.toLocaleString()} goal
+                        <span className="text-sm text-slate-500">
+                          Flexible funding
                         </span>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground">
@@ -276,14 +297,65 @@ export default async function DashboardPage() {
         
         <TabsContent value="saved" className="space-y-4">
           <h2 className="text-xl font-semibold mb-4">Saved Bounties</h2>
-          <p className="text-muted-foreground">
-            View and manage your saved bounties from your watchlist.
-          </p>
-          <div className="text-center">
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/saved">View Saved Bounties</Link>
-            </Button>
-          </div>
+          
+          {savedBountiesList.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  You haven&apos;t saved any bounties yet.
+                </p>
+                <Button asChild>
+                  <Link href="/browse">Browse Bounties</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {savedBountiesList.map((savedBounty) => (
+                <Card key={savedBounty.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">
+                          <Link href={`/bounty/${savedBounty.bounty.id}`} className="hover:underline">
+                            {savedBounty.bounty.title}
+                          </Link>
+                        </CardTitle>
+                        <CardDescription>{savedBounty.bounty.company}</CardDescription>
+                      </div>
+                      <Badge variant={savedBounty.bounty.status === "ACTIVE" ? "default" : "secondary"}>
+                        {savedBounty.bounty.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-green-600">
+                          ${savedBounty.bounty.fundingCurrent.toLocaleString()} raised
+                        </span>
+                        <span className="text-sm text-slate-500">
+                          Saved {new Date(savedBounty.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>{savedBounty.bounty._count.contributions} backers</span>
+                        <span>{savedBounty.bounty._count.comments} comments</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          
+          {savedBountiesList.length > 0 && (
+            <div className="text-center">
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/saved">View All Saved Bounties</Link>
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
