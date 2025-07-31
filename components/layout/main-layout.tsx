@@ -1,9 +1,9 @@
-import { Navbar } from "@/components/layout/navbar"
+import { StyledHeader } from "@/components/layout/styled-header"
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Navbar />
+      <StyledHeader />
       <main>{children}</main>
     </>
   )

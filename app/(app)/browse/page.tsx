@@ -118,42 +118,6 @@ export default function BrowsePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold text-slate-900">ReviveIt</span>
-            </Link>
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/browse" className="text-blue-600 font-medium">
-                Browse
-              </Link>
-              <Link href="/create" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Create Bounty
-              </Link>
-              <Link href="/about" className="text-slate-600 hover:text-slate-900 transition-colors">
-                About
-              </Link>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">

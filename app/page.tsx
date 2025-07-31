@@ -5,93 +5,67 @@ import { Progress } from "@/components/ui/progress"
 import { ArrowRight, Users, Zap, Target, TrendingUp, Clock } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { prisma } from "@/lib/prisma"
 
-export default function HomePage() {
-  const featuredBounties = [
-    {
-      id: 1,
-      title: "Google Reader",
-      description: "Restore RSS functionality for the millions who relied on this service they used daily",
-      company: "Google",
-      raised: 125000,
-      goal: 500000,
-      backers: 2847,
-      timeLeft: "23 days",
-      category: "Productivity",
-      image: "/placeholder.svg?height=200&width=300",
+export default async function HomePage() {
+  // Get featured bounties from database
+  const featuredBounties = await prisma.bounty.findMany({
+    where: {
+      status: "ACTIVE",
+      isPublic: true,
     },
-    {
-      id: 2,
-      title: "Vine",
-      description: "Make 6-second video creation work again for creators who built their audience on this platform",
-      company: "Twitter",
-      raised: 89000,
-      goal: 300000,
-      backers: 1923,
-      timeLeft: "45 days",
-      category: "Social Media",
-      image: "/placeholder.svg?height=200&width=300",
+    orderBy: [
+      { featured: "desc" },
+      { trending: "desc" },
+      { fundingCurrent: "desc" },
+    ],
+    take: 6,
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+      _count: {
+        select: {
+          contributions: {
+            where: {
+              status: "COMPLETED",
+            },
+          },
+        },
+      },
     },
-    {
-      id: 3,
-      title: "Windows Phone",
-      description: "Restore functionality to Windows Phones that people purchased but can no longer fully use",
-      company: "Microsoft",
-      raised: 67000,
-      goal: 1000000,
-      backers: 1456,
-      timeLeft: "67 days",
-      category: "Mobile OS",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-  ]
+  })
+
+  // Calculate time left for each bounty
+  const bountiesWithTimeLeft = featuredBounties.map((bounty) => {
+    const now = new Date()
+    const deadline = new Date(bounty.fundingDeadline)
+    const diffTime = deadline.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    let timeLeft = "Expired"
+    if (diffDays > 0) {
+      timeLeft = diffDays === 1 ? "1 day" : `${diffDays} days`
+    }
+
+    return {
+      ...bounty,
+      timeLeft,
+      backers: bounty._count.contributions,
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold text-slate-900">ReviveIt</span>
-            </div>
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/browse" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Browse
-              </Link>
-              <Link href="/create" className="text-slate-600 hover:text-slate-900 transition-colors">
-                Create Bounty
-              </Link>
-              <Link href="/about" className="text-slate-600 hover:text-slate-900 transition-colors">
-                About
-              </Link>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 sm:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <Badge variant="secondary" className="mb-6 bg-blue-50 text-blue-700 border-blue-200">
-              <Zap className="mr-1 h-3 w-3" />
-              Crowdfunded Revival
-            </Badge>
             <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
               Make What You
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -126,40 +100,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                  <TrendingUp className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">$2.4M</div>
-              <div className="text-slate-600">Total Raised</div>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
-                  <Users className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">12,847</div>
-              <div className="text-slate-600">Active Backers</div>
-            </div>
-            <div className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                  <Target className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-              <div className="text-3xl font-bold text-slate-900">47</div>
-              <div className="text-slate-600">Active Bounties</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Featured Bounties */}
       <section className="py-20">
@@ -171,15 +111,32 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featuredBounties.map((bounty) => (
+          {bountiesWithTimeLeft.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="max-w-md mx-auto">
+                <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No active restorations yet</h3>
+                <p className="text-slate-600 mb-6">
+                  Be the first to create a bounty for a discontinued product you want to see revived.
+                </p>
+                <Button asChild>
+                  <Link href="/create">
+                    Create the First Bounty
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {bountiesWithTimeLeft.map((bounty) => (
               <Card
                 key={bounty.id}
                 className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm"
               >
                 <div className="aspect-video overflow-hidden">
                   <Image
-                    src={bounty.image || "/placeholder.svg"}
+                    src={bounty.imageUrl || "/placeholder.svg"}
                     alt={bounty.title}
                     width={300}
                     height={200}
@@ -203,35 +160,40 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-slate-900">${bounty.raised.toLocaleString()} raised</span>
-                        <span className="text-slate-500">${bounty.goal.toLocaleString()} goal</span>
+                        <span className="font-medium text-slate-900">${bounty.fundingCurrent.toLocaleString()} raised</span>
+                        <span className="text-slate-500">${bounty.fundingGoal.toLocaleString()} goal</span>
                       </div>
-                      <Progress value={(bounty.raised / bounty.goal) * 100} className="h-2" />
+                      <Progress value={(bounty.fundingCurrent / bounty.fundingGoal) * 100} className="h-2" />
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm text-slate-600">
                         <Users className="mr-1 h-4 w-4" />
                         {bounty.backers.toLocaleString()} backers
                       </div>
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                        View Details
-                        <ArrowRight className="ml-1 h-3 w-3" />
+                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" asChild>
+                        <Link href={`/bounty/${bounty.id}`}>
+                          View Details
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className="text-center mt-12">
+          {bountiesWithTimeLeft.length > 0 && (
+            <div className="text-center mt-12">
             <Button variant="outline" size="lg" asChild>
               <Link href="/browse">
                 View All Bounties
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -313,7 +275,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
+      <footer className="bg-black text-white py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
