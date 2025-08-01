@@ -16,6 +16,20 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    
+    // Get current total contributors for this bounty
+    const uniqueContributors = await prisma.contribution.findMany({
+      where: {
+        bountyId: id,
+        status: "COMPLETED",
+      },
+      select: {
+        userId: true,
+      },
+      distinct: ["userId"],
+    })
+    const currentContributorCount = uniqueContributors.length
+
     const solutions = await prisma.solution.findMany({
       where: {
         bountyId: id,
@@ -52,7 +66,13 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({ solutions })
+    // Update totalVoters for all solutions to current contributor count
+    const solutionsWithUpdatedVoters = solutions.map(solution => ({
+      ...solution,
+      totalVoters: currentContributorCount
+    }))
+
+    return NextResponse.json({ solutions: solutionsWithUpdatedVoters })
   } catch (error) {
     console.error("Error fetching solutions:", error)
     return NextResponse.json(

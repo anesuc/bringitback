@@ -128,6 +128,19 @@ export async function POST(
       },
     })
 
+    // Get current total contributors for this bounty
+    const uniqueContributors = await prisma.contribution.findMany({
+      where: {
+        bountyId: solution.bounty.id,
+        status: "COMPLETED",
+      },
+      select: {
+        userId: true,
+      },
+      distinct: ["userId"],
+    })
+    const currentContributorCount = uniqueContributors.length
+
     // Update solution vote count
     const updatedSolution = await prisma.solution.update({
       where: { id },
@@ -136,9 +149,9 @@ export async function POST(
       },
     })
 
-    // Check if solution reaches 50% approval
-    const approvalPercentage = solution.totalVoters > 0 
-      ? (approvalCount / solution.totalVoters) * 100 
+    // Check if solution reaches 50% approval using current contributor count
+    const approvalPercentage = currentContributorCount > 0 
+      ? (approvalCount / currentContributorCount) * 100 
       : 0
 
     if (approvalPercentage >= 50 && updatedSolution.status === "PENDING") {
@@ -188,7 +201,7 @@ export async function POST(
       vote: voteRecord,
       approvalCount,
       approvalPercentage: Math.round(approvalPercentage),
-      totalVoters: solution.totalVoters,
+      totalVoters: currentContributorCount,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
