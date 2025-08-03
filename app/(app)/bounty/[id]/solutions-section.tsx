@@ -29,7 +29,9 @@ import {
   XCircle,
   Clock,
   Send,
-  Loader2
+  Loader2,
+  DollarSign,
+  CreditCard
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -74,6 +76,7 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
   const [submitting, setSubmitting] = useState(false)
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [votingOnSolution, setVotingOnSolution] = useState<string | null>(null)
+  const [payoutLoading, setPayoutLoading] = useState<string | null>(null)
   const [newSolution, setNewSolution] = useState({
     title: "",
     description: "",
@@ -199,6 +202,37 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
   const getUserVote = (solution: Solution) => {
     if (!session || !solution.votes) return null
     return solution.votes.find(vote => vote.voter.id === session.user?.id)?.vote
+  }
+
+  const requestPayout = async (solutionId: string) => {
+    if (!session) {
+      toast.error('Please sign in to request payout')
+      return
+    }
+
+    setPayoutLoading(solutionId)
+    
+    try {
+      // Request payout (manual processing by admin)
+      const response = await fetch(`/api/solutions/${solutionId}/payout`, {
+        method: 'POST',
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(data.message)
+        // Refresh solutions to show updated payout status
+        fetchSolutions()
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to request payout')
+      }
+    } catch (error) {
+      console.error('Failed to request payout:', error)
+      toast.error('Failed to request payout')
+    } finally {
+      setPayoutLoading(null)
+    }
   }
 
   if (loading) {
@@ -381,14 +415,50 @@ export default function SolutionsSection({ bountyId }: SolutionsSectionProps) {
                   )}
 
                   {solution.status === "ACCEPTED" && (
-                    <div className="bg-green-100 border border-green-200 rounded-lg p-3">
-                      <p className="text-sm text-green-800 font-medium">
-                        🎉 This solution has been accepted by the contributors!
-                      </p>
-                      {solution.acceptedAt && (
-                        <p className="text-xs text-green-600 mt-1">
-                          Accepted on {formatDate(solution.acceptedAt)}
+                    <div className="space-y-3">
+                      <div className="bg-green-100 border border-green-200 rounded-lg p-3">
+                        <p className="text-sm text-green-800 font-medium">
+                          🎉 This solution has been accepted by the contributors!
                         </p>
+                        {solution.acceptedAt && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Accepted on {formatDate(solution.acceptedAt)}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Payout section for solution submitter */}
+                      {session && solution.submitter.id === session.user?.id && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-blue-900 flex items-center gap-2">
+                                <DollarSign className="h-4 w-4" />
+                                Claim Your Bounty
+                              </h4>
+                              <p className="text-sm text-blue-700 mt-1">
+                                Your solution was accepted! You can now request payout of the contributed funds.
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => requestPayout(solution.id)}
+                              disabled={payoutLoading === solution.id}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {payoutLoading === solution.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="h-4 w-4 mr-2" />
+                                  Request Payout
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}

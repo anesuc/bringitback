@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Target, User, LogOut } from "lucide-react"
+import { Target, User, LogOut, Shield } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +15,47 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function StyledHeader() {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
   
   // Debug logging
   console.log('Session data in header:', {
     name: session?.user?.name,
     email: session?.user?.email,
-    image: session?.user?.image
+    image: session?.user?.image,
+    isAdmin: session?.user?.isAdmin
   })
+  
+  // Check admin status from session or API fallback
+  useEffect(() => {
+    if (session?.user) {
+      console.log("Checking admin status - session.user.isAdmin:", session.user.isAdmin)
+      if (session.user.isAdmin !== undefined) {
+        console.log("Using session isAdmin value:", session.user.isAdmin)
+        setIsAdmin(session.user.isAdmin)
+      } else {
+        console.log("session.user.isAdmin is undefined, checking via API fallback...")
+        // Fallback: check via API if session doesn't have isAdmin
+        fetch('/api/debug/session')
+          .then(res => res.json())
+          .then(data => {
+            console.log("API response isAdmin:", data.isAdmin)
+            setIsAdmin(data.isAdmin || false)
+            // Also force session update
+            console.log("Forcing session update...")
+            update()
+          })
+          .catch(err => {
+            console.log("API fallback failed:", err)
+            setIsAdmin(false)
+          })
+      }
+    } else {
+      console.log("No session user found")
+    }
+  }, [session, update])
+  
+  console.log("Final isAdmin state:", isAdmin)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
@@ -94,6 +128,16 @@ export function StyledHeader() {
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="cursor-pointer"

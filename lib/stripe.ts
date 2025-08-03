@@ -93,3 +93,23 @@ export async function createRefund(chargeId: string, amount?: number) {
   
   return refund
 }
+
+export async function createConnectTransfer(connectedAccountId: string, amount: number, description?: string) {
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100), // Convert to cents
+    currency: "usd",
+    destination: connectedAccountId,
+    description: description || "Bounty payout",
+  })
+  
+  return transfer
+}
+
+export async function getConnectAccountStatus(accountId: string) {
+  const account = await stripe.accounts.retrieve(accountId)
+  return {
+    charges_enabled: account.charges_enabled,
+    payouts_enabled: account.payouts_enabled,
+    requirements: account.requirements,
+  }
+}

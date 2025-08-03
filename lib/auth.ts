@@ -53,19 +53,23 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ token, session }) {
+      console.log("Session callback - token:", token)
       if (token) {
         session.user.id = token.id
         session.user.name = token.name
         session.user.email = token.email
         session.user.image = token.image
+        session.user.isAdmin = token.isAdmin
         session.user.stripeCustomerId = token.stripeCustomerId
         session.user.stripeConnectId = token.stripeConnectId
         session.user.stripeConnectOnboarded = token.stripeConnectOnboarded
       }
-
+      console.log("Session callback - final session.user:", session.user)
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      console.log("JWT callback - trigger:", trigger, "token.email:", token.email)
+      
       const dbUser = await prisma.user.findFirst({
         where: {
           email: token.email,
@@ -79,15 +83,20 @@ export const authOptions: NextAuthOptions = {
         return token
       }
 
-      return {
+      // Always return fresh data from database
+      const newToken = {
         id: dbUser.id,
         name: dbUser.name,
         email: dbUser.email,
         image: dbUser.image,
+        isAdmin: dbUser.isAdmin,
         stripeCustomerId: dbUser.stripeCustomerId,
         stripeConnectId: dbUser.stripeConnectId,
         stripeConnectOnboarded: dbUser.stripeConnectOnboarded,
       }
+      
+      console.log("JWT callback - returning token with isAdmin:", newToken.isAdmin)
+      return newToken
     },
   },
   debug: process.env.NODE_ENV === "development",

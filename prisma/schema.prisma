@@ -23,6 +23,7 @@ model User {
   bio             String?
   website         String?
   location        String?
+  isAdmin         Boolean         @default(false)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   
@@ -36,6 +37,8 @@ model User {
   solutions       Solution[]
   solutionVotes   SolutionVote[]
   updates         Update[]
+  payouts         Payout[]
+  activities      Activity[]
   
   stripeCustomerId     String?
   stripeConnectId      String?
@@ -121,6 +124,7 @@ model Bounty {
   comments         Comment[]
   savedBy          SavedBounty[]
   solutions        Solution[]
+  activities       Activity[]
   
   // Stripe related
   stripeProductId  String?
@@ -170,6 +174,7 @@ model Contribution {
   updatedAt         DateTime           @updatedAt
   
   refunds           Refund[]
+  activities        Activity[]
 }
 
 model Refund {
@@ -284,6 +289,9 @@ enum NotificationType {
   SOLUTION_SUBMITTED
   SOLUTION_ACCEPTED
   SOLUTION_REJECTED
+  PAYOUT_REQUESTED
+  PAYOUT_COMPLETED
+  PAYOUT_FAILED
 }
 
 model Solution {
@@ -303,6 +311,8 @@ model Solution {
   updatedAt     DateTime        @updatedAt
   
   votes         SolutionVote[]
+  payouts       Payout[]
+  activities    Activity[]
 }
 
 model SolutionVote {
@@ -317,6 +327,54 @@ model SolutionVote {
   @@unique([solutionId, voterId])
 }
 
+model Payout {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  solutionId      String        @db.ObjectId
+  solution        Solution      @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  userId          String        @db.ObjectId
+  user            User          @relation(fields: [userId], references: [id])
+  amount          Float         // Total amount from all contributions to the bounty
+  platformFee     Float         @default(0) // Platform fee (e.g., 5%)
+  processingFee   Float         @default(0) // Stripe processing fee
+  netAmount       Float         // Amount after fees
+  status          PayoutStatus  @default(PENDING)
+  
+  // Stripe Connect related
+  stripeTransferId     String?   @unique
+  stripePayoutId       String?   @unique
+  failureReason        String?
+  
+  requestedAt     DateTime      @default(now())
+  processedAt     DateTime?
+  failedAt        DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  activities      Activity[]
+}
+
+model Activity {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  type            ActivityType
+  title           String
+  description     String
+  userId          String?       @db.ObjectId // User who performed the action
+  user            User?         @relation(fields: [userId], references: [id])
+  
+  // Related entities (optional)
+  bountyId        String?       @db.ObjectId
+  bounty          Bounty?       @relation(fields: [bountyId], references: [id])
+  contributionId  String?       @db.ObjectId
+  contribution    Contribution? @relation(fields: [contributionId], references: [id])
+  solutionId      String?       @db.ObjectId
+  solution        Solution?     @relation(fields: [solutionId], references: [id])
+  payoutId        String?       @db.ObjectId
+  payout          Payout?       @relation(fields: [payoutId], references: [id])
+  
+  metadata        String?       // JSON string for additional data
+  createdAt       DateTime      @default(now())
+}
+
 enum SolutionStatus {
   PENDING
   ACCEPTED
@@ -326,4 +384,31 @@ enum SolutionStatus {
 enum VoteType {
   APPROVE
   REJECT
+}
+
+enum PayoutStatus {
+  PENDING      // Payout requested but not processed
+  PROCESSING   // Being processed by Stripe
+  COMPLETED    // Successfully paid out
+  PAID         // Manually marked as paid by admin
+  FAILED       // Failed to process
+  CANCELLED    // Cancelled by user or admin
+}
+
+enum ActivityType {
+  USER_REGISTERED
+  BOUNTY_CREATED
+  BOUNTY_UPDATED
+  BOUNTY_COMPLETED
+  CONTRIBUTION_MADE
+  SOLUTION_SUBMITTED
+  SOLUTION_ACCEPTED
+  SOLUTION_REJECTED
+  VOTE_CAST
+  PAYOUT_REQUESTED
+  PAYOUT_PAID
+  PAYOUT_FAILED
+  COMMENT_ADDED
+  USER_BANNED
+  ADMIN_ACTION
 }
