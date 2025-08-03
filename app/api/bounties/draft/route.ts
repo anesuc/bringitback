@@ -72,6 +72,7 @@ export async function POST(request: Request) {
         category: validatedData.category || "OTHER",
         description: validatedData.description || "",
         longDescription: validatedData.longDescription || "",
+        whatStoppedWorking: validatedData.whatStoppedWorking || "",
         imageUrl: validatedData.imageUrl,
         updatedAt: new Date(),
       }
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
         category: validatedData.category || "OTHER",
         description: validatedData.description || "",
         longDescription: validatedData.longDescription || "",
+        whatStoppedWorking: validatedData.whatStoppedWorking || "",
         imageUrl: validatedData.imageUrl,
         creatorId: user.id,
         status: "DRAFT",

@@ -59,23 +59,23 @@ export default async function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 pb-8 sm:pt-24 sm:pb-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl lg:text-7xl">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl xl:text-7xl">
               Make What You
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {" "}
                 Bought Work
               </span>
             </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-600 sm:text-xl">
+            <p className="mt-6 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 lg:text-xl">
               Fund bounties to restore functionality to products and services you purchased. When companies shut down
               servers or discontinue support, we come together to make your purchases work again.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 sm:mt-10">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8 w-full sm:w-auto"
                 asChild
               >
                 <Link href="/browse">
@@ -83,7 +83,7 @@ export default async function HomePage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="px-8 bg-transparent" asChild>
+              <Button variant="outline" size="lg" className="px-8 bg-transparent w-full sm:w-auto" asChild>
                 <Link href="/create">
                   Start a Restoration
                 </Link>
@@ -102,10 +102,10 @@ export default async function HomePage() {
 
       {/* Featured Bounties */}
       <section className="py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Active Restorations</h2>
-            <p className="mt-4 text-lg text-slate-600">
+        <div className="container mx-auto px-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">Active Restorations</h2>
+            <p className="mt-4 text-base text-slate-600 sm:text-lg">
               Help restore functionality to products that people purchased but can no longer use
             </p>
           </div>

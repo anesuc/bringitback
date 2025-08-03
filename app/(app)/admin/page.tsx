@@ -190,47 +190,47 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Admin Dashboard</h1>
           <p className="text-slate-600 mt-2">Manage ReviveIt platform operations</p>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Overview
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2">
+              <BarChart3 className="h-4 w-4 hidden sm:block" />
+              <span className="text-xs sm:text-sm">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="payouts" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Payouts
+            <TabsTrigger value="payouts" className="flex items-center gap-1 sm:gap-2">
+              <DollarSign className="h-4 w-4 hidden sm:block" />
+              <span className="text-xs sm:text-sm">Payouts</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
+            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 hidden sm:flex">
+              <Settings className="h-4 w-4 hidden sm:block" />
+              <span className="text-xs sm:text-sm">Settings</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  <div className="text-lg sm:text-2xl font-bold">{stats.totalUsers}</div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bounties</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Bounties</CardTitle>
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalBounties}</div>
+                  <div className="text-lg sm:text-2xl font-bold">{stats.totalBounties}</div>
                   <p className="text-xs text-muted-foreground">
                     {stats.activeBounties} active • {stats.completedBounties} completed
                   </p>
@@ -239,11 +239,11 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Funding</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Total Funding</CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${stats.totalFunding.toLocaleString()}</div>
+                  <div className="text-lg sm:text-2xl font-bold">${stats.totalFunding.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
                     {stats.totalContributions} contributions
                   </p>
@@ -252,11 +252,11 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending Payouts</CardTitle>
                   <AlertCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.pendingPayouts}</div>
+                  <div className="text-lg sm:text-2xl font-bold">{stats.pendingPayouts}</div>
                   <p className="text-xs text-muted-foreground">
                     {stats.completedPayouts} completed
                   </p>

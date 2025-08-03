@@ -116,23 +116,23 @@ export default async function DashboardPage() {
   })
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome back, {user.name || user.email}
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5 mb-6 sm:mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Raised</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Raised</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg sm:text-2xl font-bold">
               ${totalRaised._sum.fundingCurrent?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -142,11 +142,11 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Contributed</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Contributed</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg sm:text-2xl font-bold">
               ${totalContributed._sum.amount?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -156,11 +156,11 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Bounties</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Active</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeBounties}</div>
+            <div className="text-lg sm:text-2xl font-bold">{activeBounties}</div>
             <p className="text-xs text-muted-foreground">
               Currently accepting funds
             </p>
@@ -168,11 +168,11 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saved Bounties</CardTitle>
-            <Bookmark className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Saved</CardTitle>
+            <Bookmark className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{savedBounties}</div>
+            <div className="text-lg sm:text-2xl font-bold">{savedBounties}</div>
             <p className="text-xs text-muted-foreground">
               In your watchlist
             </p>
@@ -180,11 +180,11 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft Bounties</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Drafts</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground hidden sm:block" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{draftBounties}</div>
+            <div className="text-lg sm:text-2xl font-bold">{draftBounties}</div>
             <p className="text-xs text-muted-foreground">
               Waiting to publish
             </p>

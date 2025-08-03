@@ -122,7 +122,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Back Button */}
         <Button variant="ghost" className="mb-6" asChild>
           <Link href="/browse">
@@ -131,7 +131,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
           </Link>
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Hero Image */}
@@ -156,8 +156,8 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
                   </Badge>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-4">{bounty.title}</h1>
-              <p className="text-lg text-slate-600 mb-6">{bounty.description}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">{bounty.title}</h1>
+              <p className="text-base sm:text-lg text-slate-600 mb-6">{bounty.description}</p>
 
               {/* Creator Info */}
               <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-lg">
@@ -179,17 +179,68 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
 
             {/* Tabs */}
             <Tabs defaultValue="story" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="story">Story</TabsTrigger>
-                <TabsTrigger value="solutions">Solutions</TabsTrigger>
-                <TabsTrigger value="updates">Updates</TabsTrigger>
-                <TabsTrigger value="comments">Comments</TabsTrigger>
-                <TabsTrigger value="backers">Contributors</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                <TabsTrigger value="story" className="text-xs sm:text-sm">Story</TabsTrigger>
+                <TabsTrigger value="solutions" className="text-xs sm:text-sm">Solutions</TabsTrigger>
+                <TabsTrigger value="updates" className="text-xs sm:text-sm hidden sm:block">Updates</TabsTrigger>
+                <TabsTrigger value="comments" className="text-xs sm:text-sm">Comments</TabsTrigger>
+                <TabsTrigger value="backers" className="text-xs sm:text-sm hidden sm:block">Contributors</TabsTrigger>
               </TabsList>
 
               <TabsContent value="story" className="mt-6">
-                <div className="prose max-w-none min-h-[300px]">
-                  <p className="text-slate-700 leading-relaxed">{bounty.longDescription}</p>
+                <div className="space-y-6">
+                  {/* Main Story */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Why This Needs to Work Again</h3>
+                    <div className="prose max-w-none">
+                      <p className="text-slate-700 leading-relaxed">
+                        {bounty.longDescription || "No detailed description provided."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* What Stopped Working */}
+                  {bounty.whatStoppedWorking && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">What Features Stopped Working</h3>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-slate-700 leading-relaxed">
+                          {bounty.whatStoppedWorking}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Product Info */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Product Information</h3>
+                    <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-600">Product/Service:</span>
+                        <span className="text-slate-900">{bounty.title}</span>
+                      </div>
+                      {bounty.company && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-600">Original Company:</span>
+                          <span className="text-slate-900">{bounty.company}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-600">Category:</span>
+                        <Badge variant="secondary">{formatCategory(bounty.category)}</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Summary</h3>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-slate-700 leading-relaxed">
+                        {bounty.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
 

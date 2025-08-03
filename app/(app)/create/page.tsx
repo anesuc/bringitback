@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -103,22 +104,28 @@ export default function CreateBountyPage() {
 
   const autoSaveDraft = async () => {
     try {
+      const requestBody: any = {
+        title: formData.title,
+        company: formData.company,
+        category: formData.category || null,
+        description: formData.description,
+        longDescription: formData.longDescription,
+        whatStoppedWorking: formData.whatStoppedWorking,
+        imageUrl: formData.imageUrl,
+        imageId: formData.imageId,
+      }
+      
+      // Only include id if it exists
+      if (draftId) {
+        requestBody.id = draftId
+      }
+      
       const response = await fetch('/api/bounties/draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: draftId,
-          title: formData.title,
-          company: formData.company,
-          category: formData.category || null,
-          description: formData.description,
-          longDescription: formData.longDescription,
-          whatStoppedWorking: formData.whatStoppedWorking,
-          imageUrl: formData.imageUrl,
-          imageId: formData.imageId,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
@@ -269,22 +276,28 @@ export default function CreateBountyPage() {
     setIsSavingDraft(true)
     
     try {
+      const requestBody: any = {
+        title: formData.title,
+        company: formData.company,
+        category: formData.category || null,
+        description: formData.description,
+        longDescription: formData.longDescription,
+        whatStoppedWorking: formData.whatStoppedWorking,
+        imageUrl: formData.imageUrl,
+        imageId: formData.imageId,
+      }
+      
+      // Only include id if it exists
+      if (draftId) {
+        requestBody.id = draftId
+      }
+      
       const response = await fetch('/api/bounties/draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: draftId, // Include draft ID if editing existing draft
-          title: formData.title,
-          company: formData.company,
-          category: formData.category || null,
-          description: formData.description,
-          longDescription: formData.longDescription,
-          whatStoppedWorking: formData.whatStoppedWorking,
-          imageUrl: formData.imageUrl,
-          imageId: formData.imageId,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
@@ -332,7 +345,7 @@ export default function CreateBountyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Back Button */}
         <Button variant="ghost" className="mb-6" asChild>
           <Link href="/browse">
@@ -362,34 +375,36 @@ export default function CreateBountyPage() {
           )}
 
           {/* Progress Steps */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-4">
-              {[1, 2, 3].map((stepNumber) => (
-                <div key={stepNumber} className="flex items-center">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                      step >= stepNumber ? "bg-blue-500 border-blue-500 text-white" : "border-slate-300 text-slate-400"
-                    }`}
-                  >
-                    {step > stepNumber ? <CheckCircle className="h-5 w-5" /> : stepNumber}
+              {[1, 2, 3].map((stepNumber, index) => (
+                <React.Fragment key={stepNumber}>
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 mb-3 ${
+                        step >= stepNumber ? "bg-blue-500 border-blue-500 text-white" : "border-slate-300 text-slate-400"
+                      }`}
+                    >
+                      {step > stepNumber ? <CheckCircle className="h-5 w-5" /> : stepNumber}
+                    </div>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                      {stepNumber === 1 && "Basic Info"}
+                      {stepNumber === 2 && "Details"}
+                      {stepNumber === 3 && "Review"}
+                    </span>
                   </div>
-                  {stepNumber < 3 && (
-                    <div className={`h-1 w-32 mx-4 ${step > stepNumber ? "bg-blue-500" : "bg-slate-200"}`} />
+                  {index < 2 && (
+                    <div className={`h-1 flex-1 mx-2 sm:mx-4 ${step > stepNumber ? "bg-blue-500" : "bg-slate-200"}`} />
                   )}
-                </div>
+                </React.Fragment>
               ))}
-            </div>
-            <div className="flex justify-between text-sm text-slate-600">
-              <span>Basic Info</span>
-              <span>Details</span>
-              <span>Review</span>
             </div>
           </div>
 
           {/* Step Content */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
                 {step === 1 && "Basic Information"}
                 {step === 2 && "Project Details"}
                 {step === 3 && "Review & Submit"}
@@ -600,11 +615,11 @@ export default function CreateBountyPage() {
 
           {/* Navigation Buttons */}
           {!isCreated ? (
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={handlePrevious} disabled={step === 1 || isSubmitting}>
+            <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0">
+              <Button variant="outline" onClick={handlePrevious} disabled={step === 1 || isSubmitting} className="order-2 sm:order-1">
                 Previous
               </Button>
-              <div className="space-x-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 order-1 sm:order-2">
                 <Button 
                   variant="ghost" 
                   disabled={isSubmitting || isSavingDraft}

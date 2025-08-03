@@ -97,11 +97,12 @@ model Image {
 
 model Bounty {
   id               String          @id @default(auto()) @map("_id") @db.ObjectId
-  title            String
-  company          String
-  category         Category
-  description      String
-  longDescription  String
+  title               String
+  company             String
+  category            Category
+  description         String
+  longDescription     String
+  whatStoppedWorking  String?
   imageUrl         String?
   imageId          String?         @db.ObjectId
   image            Image?          @relation("BountyImage", fields: [imageId], references: [id])
