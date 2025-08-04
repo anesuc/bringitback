@@ -1,0 +1,15 @@
+{
+  "name": "ReviveIt",
+  "short_name": "ReviveIt",
+  "description": "Crowdfund bounties to restore discontinued products",
+  "theme_color": "#3B82F6",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -12,7 +12,12 @@ export const metadata: Metadata = {
   title: "ReviveIt - Crowdfund Bounties to Restore Discontinued Products",
   description:
     "Fund bounties to restore discontinued products and services. When companies shut down what we love, we come together to revive it.",
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
+  manifest: "/site.webmanifest",
 }
 
 export default function RootLayout({
