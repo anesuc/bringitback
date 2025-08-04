@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
+    "start": "next start -p 6173",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
