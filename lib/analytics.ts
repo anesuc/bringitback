@@ -133,6 +133,28 @@ export async function getAnalytics(days: number = 7) {
     take: 10,
   })
 
+  // Enrich bounty paths with titles
+  const enrichedPageViews = await Promise.all(
+    pageViewsByPath.map(async (item) => {
+      if (item.path.startsWith('/bounty/')) {
+        const bountyId = item.path.split('/bounty/')[1]
+        try {
+          const bounty = await prisma.bounty.findUnique({
+            where: { id: bountyId },
+            select: { title: true }
+          })
+          return {
+            ...item,
+            bountyTitle: bounty?.title || null
+          }
+        } catch {
+          return { ...item, bountyTitle: null }
+        }
+      }
+      return { ...item, bountyTitle: null }
+    })
+  )
+
   // Get device breakdown
   const deviceBreakdown = await prisma.pageView.groupBy({
     by: ['device'],
@@ -235,9 +257,10 @@ export async function getAnalytics(days: number = 7) {
       country: item.country || 'Unknown',
       count: item._count.country,
     })),
-    pageViewsByPath: pageViewsByPath.map(item => ({
+    pageViewsByPath: enrichedPageViews.map(item => ({
       path: item.path,
       count: item._count.path,
+      bountyTitle: item.bountyTitle,
     })),
     deviceBreakdown: deviceBreakdown.map(item => ({
       device: item.device || 'Unknown',

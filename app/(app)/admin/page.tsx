@@ -25,6 +25,23 @@ import {
   Eye
 } from "lucide-react"
 import Link from "next/link"
+import { 
+  LineChart, 
+  Line, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Legend 
+} from 'recharts'
 
 interface AdminStats {
   totalUsers: number
@@ -91,12 +108,32 @@ interface Analytics {
   totalPageViews: number
   uniqueVisitors: number
   pageViewsByCountry: { country: string; count: number }[]
-  pageViewsByPath: { path: string; count: number }[]
+  pageViewsByPath: { path: string; count: number; bountyTitle?: string | null }[]
   deviceBreakdown: { device: string; count: number }[]
   browserBreakdown: { browser: string; count: number }[]
   hourlyTraffic: { hour: string; count: number }[]
   topReferrers: { referrer: string; count: number }[]
   mostViewedBounties: { id: string; title: string; viewCount: number }[]
+}
+
+// Chart colors
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658']
+
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+        <p className="text-sm font-medium">{`${label}`}</p>
+        {payload.map((pld: any, index: number) => (
+          <p key={index} className="text-sm" style={{ color: pld.color }}>
+            {`${pld.dataKey}: ${pld.value}`}
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
 }
 
 export default function AdminDashboard() {
@@ -497,62 +534,196 @@ export default function AdminDashboard() {
                     </Card>
                   </div>
 
-                  {/* Detailed Analytics */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Top Pages */}
+                  {/* Traffic Over Time Chart */}
+                  {analytics.hourlyTraffic.length > 0 && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle>Traffic Over Time</CardTitle>
+                        <CardDescription>Page views over the last 24 hours</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <AreaChart data={analytics.hourlyTraffic}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="hour" 
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Area 
+                              type="monotone" 
+                              dataKey="count" 
+                              stroke="#0088FE" 
+                              fill="#0088FE" 
+                              fillOpacity={0.1}
+                              strokeWidth={2}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Charts Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    {/* Top Pages Chart */}
                     <Card>
                       <CardHeader>
                         <CardTitle>Top Pages</CardTitle>
                         <CardDescription>Most visited pages</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2">
-                          {analytics.pageViewsByPath.map((page, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <span className="text-sm text-slate-600">{page.path}</span>
-                              <Badge variant="secondary">{page.count}</Badge>
-                            </div>
-                          ))}
-                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart 
+                            data={analytics.pageViewsByPath.slice(0, 6).map(item => ({
+                              ...item,
+                              displayPath: item.path === '/' ? 'Home' : 
+                                          item.path.startsWith('/bounty/') ? 'Bounty Page' :
+                                          item.path.startsWith('/api/') ? 'API' :
+                                          item.path.replace(/^\//, '').split('/')[0] || 'Page'
+                            }))}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="displayPath" 
+                              tick={{ fontSize: 11 }}
+                              axisLine={false}
+                              tickLine={false}
+                              angle={-45}
+                              textAnchor="end"
+                              height={60}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload
+                                  return (
+                                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm max-w-xs">
+                                      {data.bountyTitle ? (
+                                        <>
+                                          <p className="text-sm font-medium">{data.bountyTitle}</p>
+                                          <p className="text-xs text-gray-500">{data.path}</p>
+                                        </>
+                                      ) : (
+                                        <p className="text-sm font-medium">{data.path}</p>
+                                      )}
+                                      <p className="text-sm text-blue-600">Views: {data.count}</p>
+                                    </div>
+                                  )
+                                }
+                                return null
+                              }}
+                            />
+                            <Bar dataKey="count" fill="#0088FE" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                       </CardContent>
                     </Card>
 
-                    {/* Countries */}
+                    {/* Device Breakdown Pie Chart */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Device Types</CardTitle>
+                        <CardDescription>Traffic by device category</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={analytics.deviceBreakdown}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ device, percent }) => `${device} ${(percent * 100).toFixed(0)}%`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="count"
+                            >
+                              {analytics.deviceBreakdown.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Additional Charts Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    {/* Countries Chart */}
                     <Card>
                       <CardHeader>
                         <CardTitle>Top Countries</CardTitle>
                         <CardDescription>Visitor locations</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2">
-                          {analytics.pageViewsByCountry.slice(0, 5).map((country, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <span className="text-sm text-slate-600">{country.country}</span>
-                              <Badge variant="secondary">{country.count}</Badge>
-                            </div>
-                          ))}
-                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={analytics.pageViewsByCountry.slice(0, 6)}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="country" 
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="count" fill="#00C49F" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                       </CardContent>
                     </Card>
 
-                    {/* Device Breakdown */}
+                    {/* Browser Breakdown */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Device Types</CardTitle>
-                        <CardDescription>Traffic by device</CardDescription>
+                        <CardTitle>Top Browsers</CardTitle>
+                        <CardDescription>Browser usage statistics</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2">
-                          {analytics.deviceBreakdown.map((device, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <span className="text-sm text-slate-600 capitalize">{device.device}</span>
-                              <Badge variant="secondary">{device.count}</Badge>
-                            </div>
-                          ))}
-                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={analytics.browserBreakdown}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="count"
+                            >
+                              {analytics.browserBreakdown.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </CardContent>
                     </Card>
+                  </div>
 
+                  {/* Data Tables */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Top Referrers */}
                     <Card>
                       <CardHeader>
@@ -562,8 +733,8 @@ export default function AdminDashboard() {
                       <CardContent>
                         <div className="space-y-2">
                           {analytics.topReferrers.slice(0, 5).map((ref, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <span className="text-sm text-slate-600 truncate">
+                            <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                              <span className="text-sm text-slate-600 truncate flex-1 mr-2">
                                 {ref.referrer === 'Direct' ? 'Direct' : 
                                  ref.referrer.startsWith('http') ? new URL(ref.referrer).hostname : ref.referrer}
                               </span>
@@ -575,7 +746,7 @@ export default function AdminDashboard() {
                     </Card>
 
                     {/* Most Viewed Bounties */}
-                    <Card className="lg:col-span-2">
+                    <Card>
                       <CardHeader>
                         <CardTitle>Most Viewed Bounties</CardTitle>
                         <CardDescription>Popular restoration campaigns</CardDescription>
@@ -583,8 +754,8 @@ export default function AdminDashboard() {
                       <CardContent>
                         <div className="space-y-2">
                           {analytics.mostViewedBounties.map((bounty, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <Link href={`/bounty/${bounty.id}`} className="text-sm text-blue-600 hover:underline">
+                            <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                              <Link href={`/bounty/${bounty.id}`} className="text-sm text-blue-600 hover:underline flex-1 mr-2 truncate">
                                 {bounty.title}
                               </Link>
                               <Badge variant="secondary">{bounty.viewCount} views</Badge>
