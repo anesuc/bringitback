@@ -60,7 +60,7 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-lg text-slate-600">
-              ReviveIt exists to solve a growing problem in our digital world: products and services 
+              ReviveIt exists to solve a growing problem in our digital world: products, games, and services 
               that stop working not because they're broken, but because companies decide to shut them down.
             </p>
           </div>
