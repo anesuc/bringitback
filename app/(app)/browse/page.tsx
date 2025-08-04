@@ -7,6 +7,10 @@ import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import BrowseFilters from "./browse-filters"
 
+// Make this page dynamic to always show fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Helper function to format category names
 function formatCategory(category: string): string {
   return category

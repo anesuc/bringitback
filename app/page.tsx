@@ -7,6 +7,10 @@ import Link from "next/link"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 
+// Make this page dynamic to always show fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Helper function to format category names
 function formatCategory(category: string): string {
   return category
@@ -49,10 +53,13 @@ export default async function HomePage() {
   })
 
   // Prepare bounties data for display
-  const bountiesWithData = featuredBounties.map((bounty) => ({
-    ...bounty,
-    backers: bounty._count.contributions,
-  }))
+  const bountiesWithData = featuredBounties.map((bounty) => {
+    console.log(`Bounty ${bounty.title}: fundingCurrent=${bounty.fundingCurrent}, backers=${bounty._count.contributions}`)
+    return {
+      ...bounty,
+      backers: bounty._count.contributions,
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
