@@ -51,7 +51,7 @@ export async function GET() {
       activeBounties,
       completedBounties,
       totalContributions,
-      totalFunding: totalFunding._sum.amount || 0,
+      totalDonations: totalFunding._sum.amount || 0,
       pendingPayouts,
       completedPayouts,
     })

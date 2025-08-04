@@ -70,7 +70,7 @@ export default function ContributeButton({
           onClick={() => setShowModal(true)}
         >
           <DollarSign className="mr-2 h-4 w-4" />
-          Fund This Restoration
+          Donate to This Restoration
         </Button>
         <ContributeModal
           bountyId={bountyId}
@@ -114,7 +114,7 @@ export default function ContributeButton({
           onClick={() => setShowModal(true)}
         >
           <DollarSign className="mr-2 h-4 w-4" />
-          Fund This Restoration
+          Donate to This Restoration
         </Button>
         <ContributeModal
           bountyId={bountyId}

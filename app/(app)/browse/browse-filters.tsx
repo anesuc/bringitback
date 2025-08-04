@@ -88,7 +88,7 @@ export default function BrowseFilters({
         <SelectContent>
           <SelectItem value="trending">Trending</SelectItem>
           <SelectItem value="newest">Newest</SelectItem>
-          <SelectItem value="most-funded">Most Funded</SelectItem>
+          <SelectItem value="most-funded">Most Donated</SelectItem>
           <SelectItem value="most-contributors">Most Contributors</SelectItem>
         </SelectContent>
       </Select>

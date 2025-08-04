@@ -17,8 +17,17 @@ export async function GET() {
         country: true,
         device: true,
         browser: true,
+        isLocalhost: true,
         createdAt: true,
       },
+    })
+    
+    // Count localhost vs production traffic
+    const localhostCount = await prisma.pageView.count({
+      where: { isLocalhost: true }
+    })
+    const productionCount = await prisma.pageView.count({
+      where: { isLocalhost: false }
     })
     
     // Get unique sessions count
@@ -28,11 +37,13 @@ export async function GET() {
     
     return NextResponse.json({
       totalPageViews,
+      localhostCount,
+      productionCount,
       uniqueSessions: uniqueSessions.length,
       recentPageViews,
       message: totalPageViews === 0 ? 
         "No page views recorded yet. Make sure to visit some pages and check the browser console for tracking logs." :
-        "Analytics data is being collected successfully!"
+        `Analytics data: ${localhostCount} localhost, ${productionCount} production views`
     })
   } catch (error) {
     console.error("Debug analytics error:", error)

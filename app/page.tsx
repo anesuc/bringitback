@@ -76,7 +76,7 @@ export default async function HomePage() {
               </span>
             </h1>
             <p className="mt-6 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 lg:text-xl">
-              Fund bounties to restore functionality to products, games, and services you purchased. When companies shut down
+              Donate to bounties to restore functionality to products, games, and services you purchased. When companies shut down
               servers or discontinue support, we come together to make your purchases work again.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 sm:mt-10">
@@ -154,7 +154,7 @@ export default async function HomePage() {
                       {formatCategory(bounty.category)}
                     </Badge>
                     <div className="text-xs text-slate-500">
-                      Flexible funding
+                      Flexible donations
                     </div>
                   </div>
                   <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">{bounty.title}</CardTitle>
@@ -239,9 +239,9 @@ export default async function HomePage() {
                   3
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">Fund the Fix</h3>
+              <h3 className="text-xl font-semibold text-slate-900 mb-4">Donate to the Fix</h3>
               <p className="text-slate-600">
-                When the goal is reached, funds go to developers who can restore functionality or create compatible
+                When the goal is reached, donations go to developers who can restore functionality or create compatible
                 alternatives.
               </p>
             </div>

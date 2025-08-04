@@ -302,7 +302,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Funding Card */}
+            {/* Donation Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl text-slate-900">${bounty.fundingCurrent.toLocaleString()}</CardTitle>
@@ -343,7 +343,7 @@ export default async function BountyDetailPage({ params }: { params: Promise<{ i
                 </div>
 
                 <div className="text-xs text-slate-500 text-center">
-                  Flexible funding. All contributions go toward making this restoration happen.
+                  Flexible donations. All contributions go toward making this restoration happen.
                 </div>
               </CardContent>
             </Card>

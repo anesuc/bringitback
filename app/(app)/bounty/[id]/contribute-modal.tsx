@@ -86,10 +86,10 @@ export default function ContributeModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            Fund This Restoration
+            Donate to This Restoration
           </DialogTitle>
           <DialogDescription>
-            Support the restoration of {bountyTitle}. Your contribution helps incentivize developers to create solutions.
+            Support the restoration of {bountyTitle}. Your donation helps incentivize developers to create solutions.
           </DialogDescription>
         </DialogHeader>
         

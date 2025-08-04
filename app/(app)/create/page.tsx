@@ -600,11 +600,11 @@ function CreateBountyForm() {
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">How Flexible Funding Works</h4>
+                    <h4 className="font-medium text-blue-900 mb-2">How Flexible Donations Work</h4>
                     <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• People contribute any amount toward your restoration bounty</li>
-                      <li>• Developers can see the total funding available before deciding to take it on</li>
-                      <li>• No funding goals - just growing community interest and available money</li>
+                      <li>• People donate any amount toward your restoration bounty</li>
+                      <li>• Developers can see the total donations available before deciding to take it on</li>
+                      <li>• No donation goals - just growing community interest and available money</li>
                       <li>• Your campaign will be reviewed before going live (24-48 hours)</li>
                     </ul>
                   </div>

@@ -111,7 +111,7 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-slate-600">
-                  Fund developers and creators to build solutions, create compatible alternatives, 
+                  Donate to developers and creators to build solutions, create compatible alternatives, 
                   or develop open-source replacements.
                 </p>
               </CardContent>
@@ -154,7 +154,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="text-xl font-semibold text-slate-900 mb-2">Build Community Support</h3>
                   <p className="text-slate-600">
-                    Other affected users discover your campaign and contribute funds. There's no fixed goal - 
+                    Other affected users discover your campaign and contribute donations. There's no fixed goal - 
                     every contribution helps show demand and builds the available budget.
                   </p>
                 </div>
@@ -167,7 +167,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="text-xl font-semibold text-slate-900 mb-2">Developers Create Solutions</h3>
                   <p className="text-slate-600">
-                    Skilled developers see the community demand and available funding, then submit solutions 
+                    Skilled developers see the community demand and available donations, then submit solutions 
                     like server replacements, compatibility tools, or open-source alternatives.
                   </p>
                 </div>
@@ -178,21 +178,21 @@ export default function AboutPage() {
                   4
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2">Community Votes & Funds Release</h3>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">Community Votes & Donations Release</h3>
                   <p className="text-slate-600">
                     Contributors vote on submitted solutions. When 50% approve a solution, 
-                    the developer receives the collected funds and the community gets their fix.
+                    the developer receives the collected donations and the community gets their fix.
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h3 className="text-xl font-semibold text-slate-900 mb-6">Why Flexible Funding?</h3>
+              <h3 className="text-xl font-semibold text-slate-900 mb-6">Why Flexible Donations?</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                  <span className="text-slate-700">No arbitrary funding goals to meet</span>
+                  <span className="text-slate-700">No arbitrary donation goals to meet</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
