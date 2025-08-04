@@ -35,6 +35,11 @@ export default function AnalyticsTracker() {
         const bountyMatch = pathname.match(/\/bounty\/([a-zA-Z0-9]+)/)
         const bountyId = bountyMatch ? bountyMatch[1] : null
         
+        // Detect if running on localhost
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' || 
+                           window.location.hostname === '0.0.0.0'
+
         const response = await fetch('/api/analytics/track', {
           method: 'POST',
           headers: {
@@ -45,6 +50,7 @@ export default function AnalyticsTracker() {
             path: pathname,
             referrer: document.referrer,
             bountyId,
+            isLocalhost,
           }),
         })
         

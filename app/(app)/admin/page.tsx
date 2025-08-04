@@ -709,13 +709,30 @@ export default function AdminDashboard() {
                               outerRadius={80}
                               paddingAngle={5}
                               dataKey="count"
+                              nameKey="browser"
+                              label={({ browser, percent }) => `${browser || 'Unknown'} ${(percent * 100).toFixed(0)}%`}
                             >
                               {analytics.browserBreakdown.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend />
+                            <Tooltip 
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload
+                                  return (
+                                    <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
+                                      <p className="text-sm font-medium">{data.browser || 'Unknown'}</p>
+                                      <p className="text-sm text-blue-600">Count: {data.count}</p>
+                                    </div>
+                                  )
+                                }
+                                return null
+                              }}
+                            />
+                            <Legend 
+                              formatter={(value, entry) => entry.payload.browser || 'Unknown'}
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                       </CardContent>

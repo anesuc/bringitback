@@ -26,6 +26,7 @@ export async function trackPageView({
   country,
   city,
   bountyId,
+  isLocalhost,
 }: {
   sessionId: string
   userId?: string | null
@@ -36,6 +37,7 @@ export async function trackPageView({
   country?: string | null
   city?: string | null
   bountyId?: string | null
+  isLocalhost?: boolean
 }) {
   try {
     // Parse user agent
@@ -63,6 +65,7 @@ export async function trackPageView({
         browser,
         os,
         bountyId,
+        isLocalhost: isLocalhost || false,
       },
     })
 
@@ -83,19 +86,21 @@ export async function getAnalytics(days: number = 7) {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
+  // Base filter to exclude localhost and development traffic
+  const baseWhere = {
+    createdAt: { gte: startDate },
+    isLocalhost: false, // Only include non-localhost traffic
+  }
+
   // Get total page views
   const totalPageViews = await prisma.pageView.count({
-    where: {
-      createdAt: { gte: startDate },
-    },
+    where: baseWhere,
   })
 
   // Get unique visitors (unique sessions)
   const uniqueVisitors = await prisma.pageView.groupBy({
     by: ['sessionId'],
-    where: {
-      createdAt: { gte: startDate },
-    },
+    where: baseWhere,
   })
 
   // Get page views by country
@@ -105,7 +110,7 @@ export async function getAnalytics(days: number = 7) {
       country: true,
     },
     where: {
-      createdAt: { gte: startDate },
+      ...baseWhere,
       country: { not: null },
     },
     orderBy: {
@@ -122,9 +127,7 @@ export async function getAnalytics(days: number = 7) {
     _count: {
       path: true,
     },
-    where: {
-      createdAt: { gte: startDate },
-    },
+    where: baseWhere,
     orderBy: {
       _count: {
         path: 'desc',
@@ -162,7 +165,7 @@ export async function getAnalytics(days: number = 7) {
       device: true,
     },
     where: {
-      createdAt: { gte: startDate },
+      ...baseWhere,
       device: { not: null },
     },
   })
@@ -174,7 +177,7 @@ export async function getAnalytics(days: number = 7) {
       browser: true,
     },
     where: {
-      createdAt: { gte: startDate },
+      ...baseWhere,
       browser: { not: null },
     },
     orderBy: {
@@ -194,6 +197,7 @@ export async function getAnalytics(days: number = 7) {
       {
         $match: {
           createdAt: { $gte: { $date: last24Hours.toISOString() } },
+          isLocalhost: false, // Exclude localhost traffic
         },
       },
       {
@@ -220,10 +224,11 @@ export async function getAnalytics(days: number = 7) {
       referrer: true,
     },
     where: {
-      createdAt: { gte: startDate },
+      ...baseWhere,
       referrer: { 
         not: null,
         notIn: ['', '/'],
+        not: { contains: 'localhost' },
       },
     },
     orderBy: {

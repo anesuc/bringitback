@@ -433,10 +433,12 @@ model PageView {
   duration        Int?          // Time spent on page in seconds
   bountyId        String?       @db.ObjectId // If viewing a bounty
   bounty          Bounty?       @relation(fields: [bountyId], references: [id])
+  isLocalhost     Boolean       @default(false) // Whether request came from localhost
   createdAt       DateTime      @default(now())
   
   @@index([sessionId])
   @@index([userId])
   @@index([createdAt])
   @@index([country])
+  @@index([isLocalhost])
 }

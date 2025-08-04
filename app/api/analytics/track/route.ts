@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       country,
       city,
       bountyId: body.bountyId,
+      isLocalhost: body.isLocalhost || false,
     })
     
     console.log('Page view tracked successfully')

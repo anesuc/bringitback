@@ -38,6 +38,11 @@ function trackingMiddleware(request: NextRequest) {
   response.headers.set('x-pathname', request.nextUrl.pathname)
   response.headers.set('x-referrer', request.headers.get('referer') || '')
   
+  // Detect localhost/development environment
+  const host = request.headers.get('host') || ''
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('0.0.0.0')
+  response.headers.set('x-is-localhost', isLocalhost.toString())
+  
   return response
 }
 
