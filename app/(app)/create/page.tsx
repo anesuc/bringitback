@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -15,7 +15,7 @@ import { ArrowLeft, Upload, Target, DollarSign, Calendar, ImageIcon, CheckCircle
 import Link from "next/link"
 import { toast } from "sonner"
 
-export default function CreateBountyPage() {
+function CreateBountyForm() {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCreated, setIsCreated] = useState(false)
@@ -661,5 +661,21 @@ export default function CreateBountyPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CreateBountyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold mb-2">Loading</h1>
+          <p className="text-slate-600">Please wait...</p>
+        </div>
+      </div>
+    }>
+      <CreateBountyForm />
+    </Suspense>
   )
 }
