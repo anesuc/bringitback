@@ -39,6 +39,7 @@ model User {
   updates         Update[]
   payouts         Payout[]
   activities      Activity[]
+  pageViews       PageView[]
   
   stripeCustomerId     String?
   stripeConnectId      String?
@@ -126,6 +127,7 @@ model Bounty {
   savedBy          SavedBounty[]
   solutions        Solution[]
   activities       Activity[]
+  pageViews        PageView[]
   
   // Stripe related
   stripeProductId  String?
@@ -412,4 +414,29 @@ enum ActivityType {
   COMMENT_ADDED
   USER_BANNED
   ADMIN_ACTION
+}
+
+model PageView {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId       String        // Session identifier
+  userId          String?       @db.ObjectId
+  user            User?         @relation(fields: [userId], references: [id])
+  path            String        // Page path
+  referrer        String?       // Referrer URL
+  userAgent       String?       // User agent string
+  ip              String?       // IP address (hashed for privacy)
+  country         String?       // Country code from IP
+  city            String?       // City from IP
+  device          String?       // Device type (mobile, desktop, tablet)
+  browser         String?       // Browser name
+  os              String?       // Operating system
+  duration        Int?          // Time spent on page in seconds
+  bountyId        String?       @db.ObjectId // If viewing a bounty
+  bounty          Bounty?       @relation(fields: [bountyId], references: [id])
+  createdAt       DateTime      @default(now())
+  
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([country])
 }

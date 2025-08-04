@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Users, 
   Target, 
@@ -17,7 +18,11 @@ import {
   Clock,
   Ban,
   Settings,
-  BarChart3
+  BarChart3,
+  Globe,
+  Monitor,
+  Smartphone,
+  Eye
 } from "lucide-react"
 import Link from "next/link"
 
@@ -82,6 +87,18 @@ interface Activity {
   metadata?: any
 }
 
+interface Analytics {
+  totalPageViews: number
+  uniqueVisitors: number
+  pageViewsByCountry: { country: string; count: number }[]
+  pageViewsByPath: { path: string; count: number }[]
+  deviceBreakdown: { device: string; count: number }[]
+  browserBreakdown: { browser: string; count: number }[]
+  hourlyTraffic: { hour: string; count: number }[]
+  topReferrers: { referrer: string; count: number }[]
+  mostViewedBounties: { id: string; title: string; viewCount: number }[]
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -89,6 +106,8 @@ export default function AdminDashboard() {
   const [pendingPayouts, setPendingPayouts] = useState<PendingPayout[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [activityFilter, setActivityFilter] = useState<string>("all")
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [analyticsDays, setAnalyticsDays] = useState(7)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -108,14 +127,15 @@ export default function AdminDashboard() {
     if (session) {
       fetchAdminData()
     }
-  }, [activityFilter])
+  }, [activityFilter, analyticsDays])
 
   const fetchAdminData = async () => {
     try {
-      const [statsResponse, payoutsResponse, activitiesResponse] = await Promise.all([
+      const [statsResponse, payoutsResponse, activitiesResponse, analyticsResponse] = await Promise.all([
         fetch("/api/admin/stats"),
         fetch("/api/admin/payouts"),
-        fetch(`/api/admin/activities?limit=10${activityFilter !== "all" ? `&type=${activityFilter}` : ""}`)
+        fetch(`/api/admin/activities?limit=10${activityFilter !== "all" ? `&type=${activityFilter}` : ""}`),
+        fetch(`/api/admin/analytics?days=${analyticsDays}`)
       ])
 
       if (statsResponse.status === 403 || payoutsResponse.status === 403) {
@@ -136,6 +156,11 @@ export default function AdminDashboard() {
       if (activitiesResponse.ok) {
         const activitiesData = await activitiesResponse.json()
         setActivities(activitiesData.activities)
+      }
+
+      if (analyticsResponse.ok) {
+        const analyticsData = await analyticsResponse.json()
+        setAnalytics(analyticsData)
       }
     } catch (error) {
       console.error("Failed to fetch admin data:", error)
@@ -197,10 +222,14 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2">
               <BarChart3 className="h-4 w-4 hidden sm:block" />
               <span className="text-xs sm:text-sm">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2">
+              <Eye className="h-4 w-4 hidden sm:block" />
+              <span className="text-xs sm:text-sm">Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="payouts" className="flex items-center gap-1 sm:gap-2">
               <DollarSign className="h-4 w-4 hidden sm:block" />
@@ -392,6 +421,182 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <div className="space-y-6">
+              {/* Analytics Controls */}
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Traffic Analytics</h2>
+                <Select value={analyticsDays.toString()} onValueChange={(v) => setAnalyticsDays(parseInt(v))}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Last 24 hours</SelectItem>
+                    <SelectItem value="7">Last 7 days</SelectItem>
+                    <SelectItem value="30">Last 30 days</SelectItem>
+                    <SelectItem value="90">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Key Metrics */}
+              {analytics && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Page Views</CardTitle>
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg sm:text-2xl font-bold">{analytics.totalPageViews.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Last {analyticsDays} days</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Unique Visitors</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg sm:text-2xl font-bold">{analytics.uniqueVisitors.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Last {analyticsDays} days</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Top Country</CardTitle>
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg sm:text-2xl font-bold">
+                          {analytics.pageViewsByCountry[0]?.country || 'N/A'}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {analytics.pageViewsByCountry[0]?.count || 0} views
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Mobile Traffic</CardTitle>
+                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-lg sm:text-2xl font-bold">
+                          {Math.round(
+                            ((analytics.deviceBreakdown.find(d => d.device === 'mobile')?.count || 0) /
+                              analytics.totalPageViews) *
+                              100
+                          )}%
+                        </div>
+                        <p className="text-xs text-muted-foreground">Of total traffic</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Detailed Analytics */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Top Pages */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Top Pages</CardTitle>
+                        <CardDescription>Most visited pages</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {analytics.pageViewsByPath.map((page, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600">{page.path}</span>
+                              <Badge variant="secondary">{page.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Countries */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Top Countries</CardTitle>
+                        <CardDescription>Visitor locations</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {analytics.pageViewsByCountry.slice(0, 5).map((country, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600">{country.country}</span>
+                              <Badge variant="secondary">{country.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Device Breakdown */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Device Types</CardTitle>
+                        <CardDescription>Traffic by device</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {analytics.deviceBreakdown.map((device, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600 capitalize">{device.device}</span>
+                              <Badge variant="secondary">{device.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Top Referrers */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Top Referrers</CardTitle>
+                        <CardDescription>Traffic sources</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {analytics.topReferrers.slice(0, 5).map((ref, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600 truncate">
+                                {ref.referrer === 'Direct' ? 'Direct' : 
+                                 ref.referrer.startsWith('http') ? new URL(ref.referrer).hostname : ref.referrer}
+                              </span>
+                              <Badge variant="secondary">{ref.count}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Most Viewed Bounties */}
+                    <Card className="lg:col-span-2">
+                      <CardHeader>
+                        <CardTitle>Most Viewed Bounties</CardTitle>
+                        <CardDescription>Popular restoration campaigns</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {analytics.mostViewedBounties.map((bounty, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <Link href={`/bounty/${bounty.id}`} className="text-sm text-blue-600 hover:underline">
+                                {bounty.title}
+                              </Link>
+                              <Badge variant="secondary">{bounty.viewCount} views</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="settings">

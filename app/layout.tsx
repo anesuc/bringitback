@@ -5,6 +5,7 @@ import "./globals.css"
 import AuthSessionProvider from "@/components/auth/session-provider"
 import { StyledHeader } from "@/components/layout/styled-header"
 import { Toaster } from "sonner"
+import AnalyticsTracker from "@/components/analytics/tracker"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthSessionProvider>
+          <AnalyticsTracker />
           <StyledHeader />
           {children}
           <Toaster position="top-right" />
