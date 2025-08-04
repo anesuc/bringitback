@@ -158,7 +158,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Restore Your Products</h1>
           <p className="text-slate-600">
-            Find campaigns to restore functionality to products, games, and services you purchased
+            Find campaigns to restore functionality to products, and services you purchased
           </p>
         </div>
 

@@ -76,7 +76,7 @@ export default async function HomePage() {
               </span>
             </h1>
             <p className="mt-6 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 lg:text-xl">
-              Donate to bounties to restore functionality to products, games, and services you purchased. When companies shut down
+              Donate to bounties to restore functionality to products, and services you purchased. When companies shut down
               servers or discontinue support, we come together to make your purchases work again.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6 sm:mt-10">
@@ -295,7 +295,7 @@ export default async function HomePage() {
                 <span className="text-2xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">ReviveIt</span>
               </div>
               <p className="text-slate-200 max-w-md text-lg leading-relaxed">
-                Crowdfunding platform dedicated to restoring functionality to products, games, and services that people
+                Crowdfunding platform dedicated to restoring functionality to products, and services that people
                 purchased but can no longer use.
               </p>
             </div>

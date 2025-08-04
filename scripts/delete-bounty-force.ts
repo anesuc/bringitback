@@ -25,7 +25,69 @@ async function forceDeleteBounty(bountyId: string) {
 
     console.log(`🗑️  Force deleting bounty: "${bounty.title}"`)
     
-    // Delete the bounty (cascade will handle related data due to onDelete: Cascade in schema)
+    // Delete related data in order to avoid foreign key constraints
+    // Note: Some relations have onDelete: Cascade, but not all, so we'll be explicit
+    
+    // Delete activities
+    await prisma.activity.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Delete page views
+    await prisma.pageView.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Delete comments
+    await prisma.comment.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Delete updates
+    await prisma.update.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Delete milestones
+    await prisma.milestone.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Get solutions to delete their payouts
+    const solutions = await prisma.solution.findMany({
+      where: { bountyId },
+      select: { id: true }
+    })
+    
+    if (solutions.length > 0) {
+      await prisma.payout.deleteMany({
+        where: { solutionId: { in: solutions.map(s => s.id) } }
+      })
+    }
+    
+    // Delete solutions
+    await prisma.solution.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Get contributions to delete their refunds
+    const contributions = await prisma.contribution.findMany({
+      where: { bountyId },
+      select: { id: true }
+    })
+    
+    if (contributions.length > 0) {
+      await prisma.refund.deleteMany({
+        where: { contributionId: { in: contributions.map(c => c.id) } }
+      })
+    }
+    
+    // Delete contributions
+    await prisma.contribution.deleteMany({
+      where: { bountyId }
+    })
+    
+    // Finally, delete the bounty
     await prisma.bounty.delete({
       where: { id: bountyId }
     })
